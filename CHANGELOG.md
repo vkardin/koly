@@ -1,5 +1,16 @@
 # Changelog
 
+## android 0.1.0 — unreleased
+
+First version of the Android app.
+
+- Onboarding: language, region, group, home screen view, notifications, disclaimer.
+- Home screen in three views: card and bar, day ring, all places as a list.
+- Up to 10 places, statistics for 7 days, settings, uk/en/ru.
+- Offline cache with conditional requests and periodic sync.
+- Notifications before outages and before power returns, on schedule changes and when tomorrow is published.
+- Home screen widgets in two styles: Cards and Minimal.
+
 ## desktop 1.0.0 — 2026-11-07
 
 First stable release of the Windows widget.
