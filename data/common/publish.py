@@ -38,6 +38,10 @@ class ProviderResult:
     region_ids: list[str]
     schedules: list[RegionSchedule] = field(default_factory=list)
     error: str | None = None
+    # True when the source answered but has nothing for today yet (not an incident).
+    not_published: bool = False
+    # True when the provider was not due this run; its regions stay as published.
+    skipped: bool = False
 
 
 @dataclass
@@ -93,19 +97,28 @@ def publish(site: Path, results: list[ProviderResult], now: datetime) -> Publish
             current[region.id] = region
 
     for result in results:
+        if result.skipped:
+            continue
         fresh = {s.region_id: s for s in result.schedules} if not result.error else {}
         for region_id in result.region_ids:
             previous = current.get(region_id)
             schedule = fresh.get(region_id)
             candidate: RegionFile | None = None
             if schedule is not None:
+                updated_at = schedule.updated_at
+                if updated_at is None:
+                    # No timestamp at the source: keep the previous one while days are unchanged.
+                    same_days = previous is not None and [_dump(d) for d in previous.days] == [
+                        _dump(d) for d in schedule.days
+                    ]
+                    updated_at = previous.updatedAt if same_days else now_iso
                 try:
                     candidate = RegionFile(
                         id=region_id,
                         provider=result.provider_id,
                         sourceUrl=result.source_url,
                         fetchedAt=now_iso,
-                        updatedAt=schedule.updated_at,
+                        updatedAt=updated_at,
                         status="no_schedules" if schedule.no_schedules else "ok",
                         emergency=schedule.emergency,
                         days=schedule.days,

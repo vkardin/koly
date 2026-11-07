@@ -150,7 +150,9 @@ class RegionSchedule(_Model):
     """What a provider returns for one region on a successful fetch."""
 
     region_id: str
-    updated_at: str
+    # None when the source has no timestamp; the pipeline then keeps the previous
+    # value while the schedule is unchanged.
+    updated_at: str | None = None
     days: list[DaySchedule]
     emergency: Emergency = Field(default_factory=Emergency)
     no_schedules: bool = False

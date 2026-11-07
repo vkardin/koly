@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: data-publish
@@ -54,3 +55,16 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -q -m "data: update schedules"
           git push origin gh-pages
+
+      - name: Check data health
+        working-directory: data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python monitor.py --site ../site
+
+      - name: Report failed run
+        if: failure()
+        working-directory: data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python monitor.py --workflow-failed "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
