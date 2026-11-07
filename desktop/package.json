@@ -1,0 +1,29 @@
+{
+  "name": "koly-widget",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "tauri": "tauri",
+    "bundle": "tauri build && node scripts/rename-installer.mjs",
+    "test": "node tests/run.mjs"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-autostart": "^2",
+    "@tauri-apps/plugin-notification": "^2",
+    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-process": "^2.4.0",
+    "@tauri-apps/plugin-updater": "^2.14.1"
+  },
+  "devDependencies": {
+    "@fontsource/inter": "^5",
+    "@fontsource/sora": "^5",
+    "@tauri-apps/cli": "^2",
+    "esbuild": "^0.25.12",
+    "typescript": "^5",
+    "vite": "^6"
+  }
+}

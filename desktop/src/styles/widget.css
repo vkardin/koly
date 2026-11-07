@@ -1,0 +1,262 @@
+html,
+body {
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
+
+#root {
+  display: inline-block;
+  padding: 10px;
+}
+
+.widget {
+  background: rgba(var(--card-rgb), var(--bg-alpha));
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  box-shadow: 0 0.375rem 1.25rem rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+}
+
+body:not(.locked) .widget {
+  cursor: grab;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.icon-btn:hover {
+  background: var(--card-2);
+  color: var(--text);
+}
+
+.icon-btn.spinning svg {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.count,
+.count-sm {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-2);
+  font-size: 0.8125rem;
+}
+
+/* Strip */
+.strip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.625rem 0.625rem 1rem;
+  min-width: 18rem;
+  border-radius: 999px;
+}
+
+.strip-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.strip-place {
+  font-weight: 600;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.strip-caption {
+  font-size: 0.75rem;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.strip .count {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.strip .empty {
+  flex-direction: row;
+  padding: 0.25rem;
+}
+
+/* Card */
+.card {
+  width: 20rem;
+  padding: 0.875rem 1rem 0.75rem;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.brand em {
+  font-style: normal;
+  color: var(--amber);
+}
+
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.head-right .muted {
+  margin-right: 0.25rem;
+}
+
+.place {
+  padding: 0.625rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.place:first-of-type {
+  border-top: 0;
+}
+
+.place-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.place-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.place-count {
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.count-sm {
+  font-size: 1.125rem;
+}
+
+.place .bar-wrap {
+  margin-top: 0.375rem;
+}
+
+.tomorrow {
+  margin-top: 0.375rem;
+}
+
+.card-foot {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.emergency {
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 120, 80, 0.16);
+  color: var(--warn);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.demo-note {
+  margin: 0 0 0.375rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 179, 92, 0.12);
+  color: var(--warn);
+  font-size: 0.6875rem;
+  line-height: 1.35;
+}
+
+/* Ring */
+.ring-view {
+  width: 13.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ring-head {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+}
+
+.ring-head .place-label {
+  flex: initial;
+}
+
+.ring {
+  width: 100%;
+  height: auto;
+  margin: 0.25rem 0;
+}
+
+.ring-foot {
+  text-align: center;
+}
+
+.update-link {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: rgba(255, 194, 74, 0.16);
+  color: var(--on-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
