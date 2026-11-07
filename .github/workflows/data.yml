@@ -2,7 +2,8 @@ name: data
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    # Off the top of the hour, when GitHub delays or drops scheduled runs most.
+    - cron: "4,14,24,34,44,54 * * * *"
   workflow_dispatch:
 
 permissions:
