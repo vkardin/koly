@@ -231,4 +231,11 @@
     <string name="widget_choose_place">Оберіть місце для віджета</string>
     <string name="widget_no_places">Відкрийте застосунок і додайте місце</string>
     <string name="widget_open_app">Відкрити «Коли Є»</string>
+    <string name="widget_preview_place">Дім · черга 3.1</string>
+    <string name="widget_preview_change">о 18:00 · до 22:00 без світла</string>
+    <string name="widget_preview_until">до 18:00</string>
+    <string name="widget_preview_next">Без світла 18:00–22:00</string>
+    <string name="widget_preview_work">Робота</string>
+    <string name="widget_preview_parents">Батьки</string>
+    <string name="widget_preview_countdown" translatable="false">2:14</string>
 </resources>

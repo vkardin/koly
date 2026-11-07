@@ -215,4 +215,10 @@
     <string name="widget_choose_place">Выберите место для виджета</string>
     <string name="widget_no_places">Откройте приложение и добавьте место</string>
     <string name="widget_open_app">Открыть «Коли Є»</string>
+    <string name="widget_preview_place">Дом · очередь 3.1</string>
+    <string name="widget_preview_change">в 18:00 · до 22:00 без света</string>
+    <string name="widget_preview_until">до 18:00</string>
+    <string name="widget_preview_next">Без света 18:00–22:00</string>
+    <string name="widget_preview_work">Работа</string>
+    <string name="widget_preview_parents">Родители</string>
 </resources>

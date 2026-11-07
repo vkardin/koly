@@ -39,6 +39,9 @@ data class WidgetModel(
     val views: List<PlaceView>,
     /** The place chosen for this widget, or the main place. */
     val chosen: PlaceView?,
+    /** Last successful check against the server, and whether the last attempt failed. */
+    val checkedAt: java.time.Instant? = null,
+    val offline: Boolean = false,
 )
 
 suspend fun loadWidgetModel(context: Context, appWidgetId: Int?): WidgetModel {
@@ -50,5 +53,5 @@ suspend fun loadWidgetModel(context: Context, appWidgetId: Int?): WidgetModel {
     val views = settings.places.map { buildPlaceView(it, snapshot, now, lang) }
     val wanted = appWidgetId?.let { WidgetPlaces.get(context, it) }
     val chosen = views.firstOrNull { it.place.id == wanted } ?: views.firstOrNull { it.place.id == settings.mainPlace?.id }
-    return WidgetModel(now, views, chosen)
+    return WidgetModel(now, views, chosen, snapshot.checkedAt, snapshot.offline)
 }
