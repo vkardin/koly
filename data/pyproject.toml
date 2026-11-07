@@ -1,0 +1,18 @@
+[project]
+name = "koly-data"
+version = "0.1.0"
+description = "Power outage schedule parsers for Koly Ye"
+authors = [{ name = "vkardin" }]
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.27,<1",
+    "pydantic>=2.7,<3",
+    "tzdata>=2024.1",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

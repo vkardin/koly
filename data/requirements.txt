@@ -1,0 +1,4 @@
+httpx==0.28.1
+pydantic==2.14.3
+tzdata==2026.6
+pytest==9.2.0
