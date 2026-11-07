@@ -1,0 +1,37 @@
+name: "🕒 Неправильний графік / Wrong schedule"
+description: "Графік у застосунку не збігається з офіційним · The schedule differs from the official one"
+labels: ["data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Коли Є — неофіційний застосунок. Офіційний графік завжди на сайті вашого обленерго.
+        Koly Ye is unofficial. The official schedule is always on your supplier's website.
+  - type: input
+    id: region
+    attributes:
+      label: "Область / Region"
+      placeholder: "Київ, Дніпропетровська, Одеська..."
+    validations:
+      required: true
+  - type: input
+    id: group
+    attributes:
+      label: "Черга / Group"
+      placeholder: "3.2"
+    validations:
+      required: true
+  - type: input
+    id: date
+    attributes:
+      label: "Дата / Date"
+      placeholder: "2026-11-07"
+    validations:
+      required: true
+  - type: textarea
+    id: diff
+    attributes:
+      label: "Що не так? / What is wrong?"
+      description: "Що показує застосунок і що в офіційному графіку. Посилання або скриншот офіційного графіка дуже допомагає."
+    validations:
+      required: true

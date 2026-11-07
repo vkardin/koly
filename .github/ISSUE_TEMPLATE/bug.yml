@@ -1,0 +1,32 @@
+name: "🐞 Помилка / Ошибка / Bug"
+description: "Щось працює не так · Что-то работает не так · Something doesn't work"
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: "Що сталося? / Что случилось? / What happened?"
+      description: "Що ви робили, що очікували і що вийшло. Скриншот дуже допомагає."
+    validations:
+      required: true
+  - type: dropdown
+    id: app
+    attributes:
+      label: "Застосунок / App"
+      options:
+        - "Віджет для Windows / Windows widget"
+        - "Дані / Data (vkardin.github.io/koly/v1)"
+        - "Інше / Other"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: "Версія / Version"
+      description: "Налаштування → Про застосунок · Settings → About"
+      placeholder: "0.1.0"
+  - type: input
+    id: os
+    attributes:
+      label: "Система / OS"
+      placeholder: "Windows 11 24H2"

@@ -1,0 +1,21 @@
+name: "💡 Ідея / Идея / Idea"
+description: "Запропонувати покращення або нову область · Suggest an improvement or a new region"
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: "Що додати чи змінити? / Что добавить или изменить? / What should be added or changed?"
+      description: "Опишіть ідею своїми словами. Можна українською, англійською чи російською."
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: "Навіщо це? / Зачем это? / Why would it help?"
+  - type: input
+    id: source
+    attributes:
+      label: "Джерело графіка / Schedule source"
+      description: "Для нової області: посилання на сторінку з графіком обленерго."
+      placeholder: "https://..."
