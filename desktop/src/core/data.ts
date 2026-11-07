@@ -3,7 +3,7 @@ import { readJson, writeJson } from "./store";
 import type { IndexFile, RegionFile } from "./types";
 
 export const DATA_BASE_URL = "https://vkardin.github.io/koly/v1/";
-export const APP_VERSION = "0.1.0";
+export const APP_VERSION = "1.0.0";
 const CACHE_FILE = "data-cache.json";
 const TIMEOUT_MS = 15000;
 
