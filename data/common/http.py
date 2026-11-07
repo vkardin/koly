@@ -15,6 +15,10 @@ class ProviderError(Exception):
     """Raised when a source cannot be fetched or parsed."""
 
 
+class NotPublished(ProviderError):
+    """The source works but has no schedule for today yet. Not worth an alert."""
+
+
 def get(url: str, *, accept: str = "*/*", attempts: int = 2) -> httpx.Response:
     last_error: Exception | None = None
     headers = {"User-Agent": USER_AGENT, "Accept": accept, "Accept-Language": "uk"}
