@@ -4,7 +4,9 @@
 - /api/schedule/time-series lists 48 half-hour slots: [{"id": 1, "start": "00:00:00"}, ...]
 - /api/v2/schedule/active lists schedules: [{"from": UTC, "to": UTC,
   "series": [{"time_series_id": 1, "outage_queue_id": 21, "type": "OFF", "updated_at": UTC}]}]
-`OFF` means no power, `PROBABLY_OFF` a possible outage.
+Slot types follow the site legend: `OFF` a planned outage, `SURE_OFF` an outage
+confirmed for now ("Актуальне відключення"), `PROBABLY_OFF` a possible outage,
+`ENABLE` power on.
 """
 
 from __future__ import annotations
@@ -18,7 +20,8 @@ from common.timeutil import KYIV, iso_kyiv
 
 API = "https://off.energy.mk.ua/api"
 SUBQUEUE_TYPE = 3
-_TYPES = {"OFF": "off", "PROBABLY_OFF": "maybe"}
+_TYPES = {"OFF": "off", "SURE_OFF": "off", "PROBABLY_OFF": "maybe"}
+_POWER_ON = {"ENABLE"}
 
 
 class Mykolaivoblenergo:
@@ -66,6 +69,8 @@ def parse(schedules: list, queues: list, series: list) -> RegionSchedule:
             name = names.get(entry["outage_queue_id"])
             if name is None:
                 continue  # other queue types (industry, emergency) share the table
+            if entry["type"] in _POWER_ON:
+                continue
             kind = _TYPES.get(entry["type"])
             if kind is None:
                 raise ProviderError(f"unknown slot type {entry['type']!r}")
