@@ -18,6 +18,12 @@ First release of the Android app.
 - Countdowns show the time of the next change.
 - Settings: keyboard focus survives every change, arrow keys work in option groups, places can be reordered with Alt+Up/Down, removing a place can be undone.
 - Screen reader announcements for reordering, removal and update checks; reduced motion support.
+- Right-click on the widget opens a menu: refresh, view, window mode, lock position, settings, hide.
+- Tooltips and screen readers read countdowns as a full sentence ("2 год 14 хв"), not as a clock time.
+- Countdowns update exactly on the minute. Auto-refresh catches up after sleep, retries every 2 minutes while offline and refreshes as soon as the network is back.
+- First launch opens settings on Places.
+- Settings: test notification reports when Windows blocks notifications; "Refresh now" shows progress; lead time is disabled while both warnings are off.
+- Better contrast for "possible outage" text, danger buttons and focus outlines in the light theme.
 
 ## desktop 1.0.0 — 2026-11-07
 

@@ -251,9 +251,6 @@ h1 {
 }
 
 .switch:focus-visible,
-.grip:focus-visible,
-.link:focus-visible,
-.link-row:focus-visible,
 .segmented button:focus-visible,
 .nav-item:focus-visible,
 .view-card:focus-visible {
@@ -309,20 +306,10 @@ h1 {
 }
 
 .grip {
-  min-width: 2rem;
-  min-height: 2.25rem;
-  border: 0;
-  border-radius: 0.375rem;
-  background: transparent;
   cursor: grab;
   color: var(--text-2);
   letter-spacing: -3px;
-  padding: 0 0.5rem 0 0.25rem;
-}
-
-.grip:hover {
-  background: var(--card-2);
-  color: var(--text);
+  padding: 0 0.25rem;
 }
 
 .place-info {
@@ -461,4 +448,22 @@ h1 {
     transition: none !important;
     animation: none !important;
   }
+}
+
+.row-disabled > span:first-child,
+.row-disabled .segmented {
+  opacity: 0.55;
+}
+
+.segmented button:disabled {
+  cursor: not-allowed;
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.test-result {
+  margin: 0.75rem 0 0;
 }

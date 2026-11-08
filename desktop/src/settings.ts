@@ -41,24 +41,6 @@ type UpdateState =
   | { kind: "installing"; progress: string }
   | { kind: "error" };
 let updateState: UpdateState = { kind: "idle" };
-let refreshingData = false;
-let refreshGuard: number | undefined;
-
-/** Short message under the content, optionally with an undo button. */
-let toast: { text: string; undo?: () => void; fresh: boolean } | null = null;
-let toastTimer: number | undefined;
-
-function showToast(text: string, undo?: () => void) {
-  toast = { text, undo, fresh: true };
-  clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => {
-    toast = null;
-    // Only clear the message: a full re-render would reset a form being typed in.
-    const region = app.querySelector(".toast-region");
-    if (region) region.innerHTML = "";
-  }, 7000);
-  render();
-}
 
 type UndoState = { label: string; places: Place[]; mainPlaceId: string | null };
 let undo: UndoState | null = null;
@@ -91,6 +73,10 @@ function announce(text: string) {
   window.setTimeout(() => (live.textContent = text), 50);
 }
 
+let refreshingData = false;
+let refreshGuard: number | undefined;
+let testResult: string | null = null;
+
 async function update(patch: Partial<Settings>) {
   settings = { ...settings, ...patch };
   await saveSettings(settings);
@@ -122,20 +108,16 @@ function mainPlace(): Place | undefined {
 
 function toggle(id: string, label: string, checked: boolean): string {
   return `<label class="row toggle-row"><span>${esc(label)}</span>
-    <input type="checkbox" role="switch" class="switch" data-field="${id}" ${checked ? "checked" : ""}/></label>`;
+    <input type="checkbox" class="switch" data-field="${id}" ${checked ? "checked" : ""}/></label>`;
 }
 
-function segmented(id: string, title: string, options: Array<[string, string]>, value: string): string {
-  return `<span id="lbl-${id}">${esc(title)}</span><div class="segmented" role="radiogroup" aria-labelledby="lbl-${id}">${options
+function segmented(id: string, title: string, options: Array<[string, string]>, value: string, disabled = false): string {
+  return `<span id="lbl-${id}">${esc(title)}</span><div class="segmented" role="radiogroup" aria-labelledby="lbl-${id}"${disabled ? ' aria-disabled="true"' : ""}>${options
     .map(
       ([v, label]) =>
-        `<button role="radio" aria-checked="${v === value}" tabindex="${v === value ? 0 : -1}" class="${v === value ? "active" : ""}" data-seg="${id}" data-value="${v}">${esc(label)}</button>`,
+        `<button role="radio" aria-checked="${v === value}" tabindex="${v === value ? 0 : -1}" class="${v === value ? "active" : ""}" data-seg="${id}" data-value="${v}"${disabled ? " disabled" : ""}>${esc(label)}</button>`,
     )
     .join("")}</div>`;
-}
-
-function segRow(id: string, label: string, options: Array<[string, string]>, value: string, disabled = false): string {
-  return `<div class="row${disabled ? " row-disabled" : ""}"><span>${esc(label)}</span>${segmented(id, options, value, label, disabled)}</div>`;
 }
 
 function viewIcon(view: string): string {
@@ -235,11 +217,13 @@ function renderNotifications(): string {
     ${toggle("notify.sound", t("sound"), n.sound)}
   </section>
   <section class="group">
-    <div class="row">${segmented("leadMinutes", t("leadTime"), [5, 10, 15, 30, 60].map((m) => [String(m), t("minutesShort", { n: m })]), String(n.leadMinutes))}</div>
+    <div class="row${leadOff ? " row-disabled" : ""}">${segmented("leadMinutes", t("leadTime"), [5, 10, 15, 30, 60].map((m) => [String(m), t("minutesShort", { n: m })]), String(n.leadMinutes), leadOff)}</div>
+    ${leadOff ? `<p class="hint">${esc(t("leadNeedsToggle"))}</p>` : ""}
     <div class="row">${segmented("scope", t("forPlaces"), [["main", t("forMain")], ["all", t("forAll")]], n.scope)}</div>
     ${toggle("notify.quietNight", t("quietNight"), n.quietNight)}
   </section>
-  <button class="btn ghost" data-action="test-notification">${esc(t("testNotification"))}</button>`;
+  <button class="btn ghost" data-action="test-notification">${esc(t("testNotification"))}</button>
+  ${testResult ? `<p class="hint test-result" role="status">${esc(testResult)}</p>` : ""}`;
 }
 
 function renderGeneral(): string {
@@ -256,7 +240,7 @@ function renderGeneral(): string {
         ["0", t("manualOnly")],
       ],
       String(settings.refreshMinutes),
-    )}
+    )}</div>
     ${toggle("autostart", t("autostart"), autostartOn)}
     ${toggle("trayIcon", t("trayIcon"), settings.trayIcon)}
   </section>
@@ -395,44 +379,14 @@ function newId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function movePlace(id: string, delta: number) {
-  const from = settings.places.findIndex((p) => p.id === id);
-  const to = from + delta;
-  if (from < 0 || to < 0 || to >= settings.places.length) return;
-  const places = [...settings.places];
-  const [item] = places.splice(from, 1);
-  places.splice(to, 0, item);
-  void update({ places });
-}
-
-function onKeyDown(e: KeyboardEvent) {
-  const el = e.target as HTMLElement;
-  const keys: Record<string, number> = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 };
-  const delta = keys[e.key];
-  if (delta === undefined) return;
-  if (el.dataset.action === "grip" && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
-    e.preventDefault();
-    return movePlace(el.dataset.id!, delta);
-  }
-  if (el.dataset.seg) {
-    const options = [...(el.closest('[role="radiogroup"]')?.querySelectorAll<HTMLElement>("[data-seg]") ?? [])];
-    const i = options.indexOf(el);
-    const next = options[(i + delta + options.length) % options.length];
-    if (!next || next === el) return;
-    e.preventDefault();
-    next.focus();
-    next.click();
-  }
-}
-
 function wire() {
-  app.addEventListener("keydown", onKeyDown);
   app.addEventListener("click", async (e) => {
     const el = e.target as HTMLElement;
     const nav = el.closest<HTMLElement>("[data-section]");
     if (nav) {
       section = nav.dataset.section as Section;
       editingId = null;
+      testResult = null;
       return render();
     }
     const link = el.closest<HTMLElement>("[data-link]");
@@ -481,10 +435,12 @@ function wire() {
       case "install-update":
         return installUpdate();
       case "test-notification":
-        return showToast((await sendTest(settings)) ? t("testSent") : t("notifyBlocked"));
+        testResult = (await sendTest(settings)) ? t("testSent") : t("notifyBlocked");
+        return render();
       case "refresh":
         refreshingData = true;
         clearTimeout(refreshGuard);
+        // The widget answers with "data-updated"; don't leave the button stuck if it never does.
         refreshGuard = window.setTimeout(() => {
           refreshingData = false;
           render();

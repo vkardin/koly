@@ -57,38 +57,13 @@ function placeIssue(place: Place): string | null {
   return null;
 }
 
-/** Reasons to distrust what the widget shows, most important first. */
-function dataWarnings(places: Place[]): string[] {
-  const out: string[] = [];
-  if (data.demo) out.push(t("demo"));
-  else if (data.offline) out.push(t("offline"));
-  if (!data.demo && places.some((p) => data.regions[p.regionId]?.status === "stale")) out.push(t("stale"));
-  return out;
-}
-
-/** Small badge for the one-place views, which have no footer. */
-function warningBadge(place: Place): string {
-  const w = dataWarnings([place])[0];
-  if (!w) return "";
-  return `<span class="badge" title="${esc(`${t("updatedAgo", { ago: agoText(data.checkedAt) })} · ${w}`)}">${esc(w)}</span>`;
-}
-
 function statusFooter(): string {
-  const parts = dataWarnings(settings.places).map((w) => `<b class="warn">${esc(w)}</b>`);
-  parts.push(esc(t("unofficial")));
+  const parts = [t("updatedAgo", { ago: agoText(data.checkedAt) })];
+  if (data.demo) parts.push(`<b class="warn">${esc(t("demo"))}</b>`);
+  else if (data.offline) parts.push(`<b class="warn">${esc(t("offline"))}</b>`);
+  const stale = settings.places.some((p) => data.regions[p.regionId]?.status === "stale");
+  if (stale && !data.demo) parts.push(`<b class="warn">${esc(t("stale"))}</b>`);
   return parts.join(" · ");
-}
-
-/** "до 18:00" for the moment the current state ends. */
-function untilText(ps: PlaceStatus): string {
-  return ps.changeAt != null ? t("untilTime", { time: formatHm(ps.changeAt) }) : "";
-}
-
-/** Full sentence for tooltips and screen readers: the big "2:14" alone reads like a clock time. */
-function spokenStatus(place: Place, ps: PlaceStatus, issue: string | null): string {
-  if (issue) return `${place.label}: ${issue}`;
-  if (ps.untilChange == null) return `${place.label}: ${stateLabel(ps.state)}, ${t("noChangesToday")}`;
-  return `${place.label}: ${t("stateUntil", { state: stateLabel(ps.state), time: formatHm(ps.changeAt!) })}, ${inText(ps)} ${durationText(ps.untilChange)}`;
 }
 
 function emergencyBanner(places: Place[]): string {
@@ -111,6 +86,13 @@ function compactAlerts(place: Place): string {
 
 function changeAtText(ps: PlaceStatus): string {
   return ps.changeAt != null ? t("untilTime", { time: formatHm(ps.changeAt % 1440) }) : "";
+}
+
+/** Full sentence for tooltips and screen readers: the big "2:14" alone reads like a clock time. */
+function spokenStatus(place: Place, ps: PlaceStatus, issue: string | null): string {
+  if (issue) return `${place.label}: ${issue}`;
+  if (ps.untilChange == null) return `${place.label}: ${stateLabel(ps.state)}, ${t("noChangesToday")}`;
+  return `${place.label}: ${stateLabel(ps.state)} ${changeAtText(ps)}, ${inText(ps)} ${durationText(ps.untilChange)}`;
 }
 
 function settingsButton(): string {
@@ -138,8 +120,8 @@ function renderStrip(): string {
   const ps = placeStatus(data.regions[place.regionId], place.group, now);
   const count = issue ? "—" : ps.untilChange != null ? formatCountdown(ps.untilChange) : "—";
   const caption = issue ?? (ps.untilChange != null ? inText(ps) : t("noChangesToday"));
-  const tip = issue ?? [stateLabel(ps.state), changeAtText(ps)].filter(Boolean).join(" · ");
-  return `<div class="widget strip" title="${esc(tip)}">
+  const tip = spokenStatus(place, ps, issue);
+  return `<div class="widget strip" role="group" aria-label="${esc(tip)}" title="${esc(tip)}">
     <span class="dot state-${issue ? "none" : ps.state}" aria-hidden="true"></span>
     <div class="strip-text">
       <div class="strip-place">${esc(place.label)}</div>
@@ -165,15 +147,14 @@ function renderCardPlace(place: Place): string {
   const bar = !issue && ps.hasToday ? renderBar(ps.today, { nowMinutes: now.minutes, labels: isMain, durations: isMain, compact: !isMain }) : "";
   const tomorrow =
     settings.showTomorrow && !issue && ps.tomorrow
-      ? `<div class="tomorrow"><span class="tomorrow-label muted small">${esc(t("tomorrow"))}</span>${renderBar(ps.tomorrow, { compact: true })}</div>`
+      ? `<div class="tomorrow"><span class="muted small">${esc(t("tomorrow"))}</span>${renderBar(ps.tomorrow, { compact: true })}</div>`
       : "";
   const spoken = spokenStatus(place, ps, issue);
   return `<div class="place">
-    <div class="place-head" title="${esc(spoken)}">
+    <div class="place-head" title="${esc(spoken)}" role="group" aria-label="${esc(spoken)}">
       <span class="dot state-${issue ? "none" : ps.state}" aria-hidden="true"></span>
-      <span class="place-label" aria-hidden="true">${esc(place.label)}</span>
-      <span class="place-count" aria-hidden="true">${countLine}</span>
-      <span class="sr-only">${esc(spoken)}</span>
+      <span class="place-label">${esc(place.label)}</span>
+      <span class="place-count">${countLine}</span>
     </div>
     ${bar}${tomorrow}
   </div>`;
@@ -185,7 +166,7 @@ function renderCard(): string {
     <div class="card-head">
       <div class="brand">${logoMark(20)}<span>Коли <em>Є</em></span></div>
       <div class="head-right">
-        <span class="muted small" title="${esc(t("updatedAgo", { ago: agoText(data.checkedAt) }))}">${esc(agoText(data.checkedAt))}</span>
+        <span class="muted small">${esc(agoText(data.checkedAt))}</span>
         ${refreshButton()}
         ${settingsButton()}
       </div>
@@ -194,7 +175,7 @@ function renderCard(): string {
     ${data.demo ? `<div class="demo-note">${esc(t("demoLong"))}</div>` : ""}
     ${places.length ? places.map(renderCardPlace).join("") : emptyState()}
     ${updateVersion ? `<button class="update-link" data-action="update">${esc(t("updateAvailable", { v: updateVersion }))}</button>` : ""}
-    <div class="card-foot muted small">${statusFooter()}</div>
+    <div class="card-foot muted small">${statusFooter()} · ${esc(t("unofficial"))}</div>
   </div>`;
 }
 
@@ -207,7 +188,8 @@ function renderRingView(): string {
   const center = issue ? "—" : ps.untilChange != null ? formatCountdown(ps.untilChange) : "—";
   const sub = issue ?? (ps.changeAt != null ? inText(ps) : t("noChangesToday"));
   const foot = issue ? "" : [stateLabel(ps.state), changeAtText(ps)].filter(Boolean).join(" · ");
-  return `<div class="widget ring-view">
+  const spoken = spokenStatus(place, ps, issue);
+  return `<div class="widget ring-view" role="group" aria-label="${esc(spoken)}" title="${esc(spoken)}">
     <div class="ring-actions">${refreshButton()}${settingsButton()}</div>
     <div class="ring-head"><span class="place-label">${esc(place.label)}</span></div>
     ${renderRing(issue ? [] : ps.today, now.minutes, center, sub, issue ? "none" : ps.state)}
@@ -236,8 +218,12 @@ function render() {
   if (!settings || !data) return;
   document.body.dataset.view = settings.view;
   document.body.classList.toggle("locked", settings.lockPosition);
+  const html = renderers[settings.view]();
+  // Skip identical frames so hover, focus and tooltips survive the minute tick.
+  if (html === lastHtml) return;
+  lastHtml = html;
   const focused = (document.activeElement as HTMLElement | null)?.dataset.action;
-  root.innerHTML = renderers[settings.view]();
+  root.innerHTML = html;
   if (focused) root.querySelector<HTMLElement>(`[data-action="${focused}"]`)?.focus();
   void fitWindow();
 }

@@ -64,9 +64,8 @@ export function renderBar(segments: Segment[], opts: BarOptions = {}): string {
     labels = `<div class="bar-labels">${items.join("")}</div>`;
   }
 
-  const describe = describeSegments(segments);
   return `<div class="bar-wrap${opts.compact ? " compact" : ""}">
-    <div class="bar" role="img" aria-label="${esc(describe)}" title="${esc(describe)}">${segs}${marker}</div>${labels}
+    <div class="bar" role="img" aria-label="${esc(describeSegments(segments))}">${segs}${marker}</div>${labels}
   </div>`;
 }
 

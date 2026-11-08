@@ -46,12 +46,6 @@ body:not(.locked) .widget {
   animation: spin 0.9s linear infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .icon-btn.spinning svg {
-    animation-duration: 2.4s;
-  }
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -93,16 +87,9 @@ body:not(.locked) .widget {
 }
 
 .strip-place {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
   font-weight: 600;
   font-size: 0.875rem;
   white-space: nowrap;
-}
-
-.strip-label {
-  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -190,10 +177,6 @@ body:not(.locked) .widget {
   white-space: nowrap;
 }
 
-.until {
-  font-size: 0.6875rem;
-}
-
 .count-sm {
   font-size: 1.125rem;
 }
@@ -202,19 +185,8 @@ body:not(.locked) .widget {
   margin-top: 0.375rem;
 }
 
-/* Tomorrow stays full width so both days share one time axis. */
 .tomorrow {
   margin-top: 0.375rem;
-}
-
-.tomorrow-label {
-  display: block;
-  font-size: 0.6875rem;
-  line-height: 1.2;
-}
-
-.tomorrow .bar-wrap {
-  padding-top: 0.1875rem;
 }
 
 .card-foot {
