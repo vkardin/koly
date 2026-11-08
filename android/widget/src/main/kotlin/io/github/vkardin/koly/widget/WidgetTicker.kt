@@ -35,7 +35,9 @@ object WidgetTicker {
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
-    fun schedule(context: Context) {
+    fun schedule(context: Context) = runCatching { scheduleInternal(context) }
+
+    private fun scheduleInternal(context: Context) {
         val am = context.getSystemService(AlarmManager::class.java)
         if (!hasWidgets(context)) {
             am.cancel(intent(context))
@@ -46,6 +48,9 @@ object WidgetTicker {
         am.set(AlarmManager.RTC, next, intent(context))
     }
 }
+
+/** Outlives activities, for widget refreshes started from the configuration screen. */
+internal val WidgetUpdateScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
 class WidgetTickReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

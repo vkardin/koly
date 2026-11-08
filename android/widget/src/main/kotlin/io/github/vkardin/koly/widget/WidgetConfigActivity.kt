@@ -89,11 +89,11 @@ class WidgetConfigActivity : ComponentActivity() {
                                 Modifier.heightIn(min = 56.dp).clickable(role = Role.Button) {
                                     WidgetPlaces.set(this@WidgetConfigActivity, appWidgetId, p.id)
                                     WidgetPlaces.setTheme(this@WidgetConfigActivity, appWidgetId, theme)
-                                    scope.launch {
-                                        KolyWidgets.updateAll(applicationContext)
-                                        setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
-                                        finish()
-                                    }
+                                    // Confirm first, so the launcher keeps the widget whatever happens next.
+                                    setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
+                                    val app = applicationContext
+                                    WidgetUpdateScope.launch { runCatching { KolyWidgets.updateAll(app) } }
+                                    finish()
                                 },
                             ) {
                                 Text(p.label, style = MaterialTheme.typography.titleMedium)
