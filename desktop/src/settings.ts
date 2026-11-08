@@ -41,6 +41,24 @@ type UpdateState =
   | { kind: "installing"; progress: string }
   | { kind: "error" };
 let updateState: UpdateState = { kind: "idle" };
+let refreshingData = false;
+let refreshGuard: number | undefined;
+
+/** Short message under the content, optionally with an undo button. */
+let toast: { text: string; undo?: () => void; fresh: boolean } | null = null;
+let toastTimer: number | undefined;
+
+function showToast(text: string, undo?: () => void) {
+  toast = { text, undo, fresh: true };
+  clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toast = null;
+    // Only clear the message: a full re-render would reset a form being typed in.
+    const region = app.querySelector(".toast-region");
+    if (region) region.innerHTML = "";
+  }, 7000);
+  render();
+}
 
 async function update(patch: Partial<Settings>) {
   settings = { ...settings, ...patch };
@@ -73,16 +91,21 @@ function mainPlace(): Place | undefined {
 
 function toggle(id: string, label: string, checked: boolean): string {
   return `<label class="row toggle-row"><span>${esc(label)}</span>
-    <input type="checkbox" class="switch" data-field="${id}" ${checked ? "checked" : ""}/></label>`;
+    <input type="checkbox" role="switch" class="switch" data-field="${id}" ${checked ? "checked" : ""}/></label>`;
 }
 
-function segmented(id: string, options: Array<[string, string]>, value: string): string {
-  return `<div class="segmented" role="radiogroup">${options
+/** Radio group with one tab stop; arrow keys move the choice (see onKeyDown). */
+function segmented(id: string, options: Array<[string, string]>, value: string, label: string, disabled = false): string {
+  return `<div class="segmented${disabled ? " disabled" : ""}" role="radiogroup" aria-label="${esc(label)}"${disabled ? ' aria-disabled="true"' : ""}>${options
     .map(
-      ([v, label]) =>
-        `<button role="radio" aria-checked="${v === value}" class="${v === value ? "active" : ""}" data-seg="${id}" data-value="${v}">${esc(label)}</button>`,
+      ([v, text]) =>
+        `<button role="radio" aria-checked="${v === value}" tabindex="${v === value ? 0 : -1}" class="${v === value ? "active" : ""}" data-seg="${id}" data-value="${v}"${disabled ? " disabled" : ""}>${esc(text)}</button>`,
     )
     .join("")}</div>`;
+}
+
+function segRow(id: string, label: string, options: Array<[string, string]>, value: string, disabled = false): string {
+  return `<div class="row${disabled ? " row-disabled" : ""}"><span>${esc(label)}</span>${segmented(id, options, value, label, disabled)}</div>`;
 }
 
 function viewIcon(view: string): string {
@@ -102,10 +125,10 @@ function renderAppearance(): string {
   return `<h1>${esc(t("secAppearance"))}</h1>
   <section class="group">
     <div class="group-title">${esc(t("widgetView"))}</div>
-    <div class="view-cards" role="radiogroup">
+    <div class="view-cards" role="radiogroup" aria-label="${esc(t("widgetView"))}">
       ${views
         .map(
-          ([v, k]) => `<button class="view-card ${settings.view === v ? "active" : ""}" role="radio" aria-checked="${settings.view === v}" data-seg="view" data-value="${v}">
+          ([v, k]) => `<button class="view-card ${settings.view === v ? "active" : ""}" role="radio" aria-checked="${settings.view === v}" tabindex="${settings.view === v ? 0 : -1}" data-seg="view" data-value="${v}">
           ${viewIcon(v)}<span>${esc(t(k))}</span></button>`,
         )
         .join("")}
@@ -113,8 +136,8 @@ function renderAppearance(): string {
     <p class="hint">${esc(t("viewHint"))}</p>
   </section>
   <section class="group">
-    <div class="row"><span>${esc(t("placement"))}</span>${segmented("windowMode", [["top", t("placementTop")], ["desktop", t("placementDesktop")]], settings.windowMode)}</div>
-    <div class="row"><span>${esc(t("theme"))}</span>${segmented("theme", [["system", t("themeSystem")], ["dark", t("themeDark")], ["light", t("themeLight")]], settings.theme)}</div>
+    ${segRow("windowMode", t("placement"), [["top", t("placementTop")], ["desktop", t("placementDesktop")]], settings.windowMode)}
+    ${segRow("theme", t("theme"), [["system", t("themeSystem")], ["dark", t("themeDark")], ["light", t("themeLight")]], settings.theme)}
     <label class="row"><span>${esc(t("opacity"))}</span><span class="range"><input type="range" min="40" max="100" step="5" value="${settings.opacity}" data-range="opacity"/><output>${settings.opacity}%</output></span></label>
     <label class="row"><span>${esc(t("scale"))}</span><span class="range"><input type="range" min="90" max="125" step="5" value="${settings.scale}" data-range="scale"/><output>${settings.scale}%</output></span></label>
     ${toggle("showTomorrow", t("showTomorrow"), settings.showTomorrow)}
@@ -152,7 +175,7 @@ function renderPlaces(): string {
       if (editingId === p.id) return `<li class="place-item editing">${placeForm(p)}</li>`;
       const isMain = p.id === main?.id;
       return `<li class="place-item" draggable="true" data-id="${esc(p.id)}">
-        <span class="grip" title="${esc(t("dragHint"))}" aria-hidden="true">⋮⋮</span>
+        <button type="button" class="grip" data-action="grip" data-id="${esc(p.id)}" title="${esc(t("dragHint"))}" aria-label="${esc(t("reorderLabel", { place: p.label }))}">⋮⋮</button>
         <div class="place-info"><div class="place-name">${esc(p.label)} ${isMain ? `<span class="pill">${esc(t("main"))}</span>` : ""}</div>
           <div class="muted small">${esc(regionName(p.regionId))} · ${esc(t("group"))} ${esc(p.group)}</div></div>
         ${isMain ? "" : `<button class="btn ghost sm" data-action="main" data-id="${esc(p.id)}">${esc(t("makeMain"))}</button>`}
@@ -172,6 +195,7 @@ function renderPlaces(): string {
 
 function renderNotifications(): string {
   const n = settings.notify;
+  const leadOff = !n.beforeOff && !n.beforeOn;
   return `<h1>${esc(t("secNotifications"))}</h1>
   <section class="group">
     ${toggle("notify.beforeOff", t("beforeOff"), n.beforeOff)}
@@ -181,8 +205,9 @@ function renderNotifications(): string {
     ${toggle("notify.sound", t("sound"), n.sound)}
   </section>
   <section class="group">
-    <div class="row"><span>${esc(t("leadTime"))}</span>${segmented("leadMinutes", [5, 10, 15, 30, 60].map((m) => [String(m), t("minutesShort", { n: m })]), String(n.leadMinutes))}</div>
-    <div class="row"><span>${esc(t("forPlaces"))}</span>${segmented("scope", [["main", t("forMain")], ["all", t("forAll")]], n.scope)}</div>
+    ${segRow("leadMinutes", t("leadTime"), [5, 10, 15, 30, 60].map((m) => [String(m), t("minutesShort", { n: m })]), String(n.leadMinutes), leadOff)}
+    ${leadOff ? `<p class="hint row-hint">${esc(t("leadNeedsToggle"))}</p>` : ""}
+    ${segRow("scope", t("forPlaces"), [["main", t("forMain")], ["all", t("forAll")]], n.scope)}
     ${toggle("notify.quietNight", t("quietNight"), n.quietNight)}
   </section>
   <button class="btn ghost" data-action="test-notification">${esc(t("testNotification"))}</button>`;
@@ -191,9 +216,10 @@ function renderNotifications(): string {
 function renderGeneral(): string {
   return `<h1>${esc(t("secGeneral"))}</h1>
   <section class="group">
-    <div class="row"><span>${esc(t("language"))}</span>${segmented("lang", LANGS.map((l) => [l.id, l.label]), settings.lang)}</div>
-    <div class="row"><span>${esc(t("refreshFreq"))}</span>${segmented(
+    ${segRow("lang", t("language"), LANGS.map((l) => [l.id, l.label]), settings.lang)}
+    ${segRow(
       "refreshMinutes",
+      t("refreshFreq"),
       [
         ["5", t("minutesShort", { n: 5 })],
         ["10", t("minutesShort", { n: 10 })],
@@ -201,13 +227,13 @@ function renderGeneral(): string {
         ["0", t("manualOnly")],
       ],
       String(settings.refreshMinutes),
-    )}</div>
+    )}
     ${toggle("autostart", t("autostart"), autostartOn)}
     ${toggle("trayIcon", t("trayIcon"), settings.trayIcon)}
   </section>
   <section class="group">
     <div class="row"><span>${esc(t("dataUpdated", { ago: agoText(data.checkedAt) }))}${data.demo ? ` <span class="badge">${esc(t("demo"))}</span>` : ""}</span>
-      <button class="btn" data-action="refresh">${esc(t("refreshNow"))}</button></div>
+      <button class="btn" data-action="refresh"${refreshingData ? " disabled" : ""}>${esc(refreshingData ? t("refreshing") : t("refreshNow"))}</button></div>
     ${data.demo ? `<p class="hint">${esc(t("demoLong"))}</p>` : ""}
   </section>
   <button class="btn ghost danger" data-action="reset">${esc(t("resetAll"))}</button>`;
@@ -290,9 +316,26 @@ const renderers: Record<Section, () => string> = {
   about: renderAbout,
 };
 
+/** CSS selector that finds the same control after a re-render. */
+function focusSelector(el: Element | null): string | null {
+  if (!(el instanceof HTMLElement) || el === document.body) return null;
+  const q = (v: string) => `"${CSS.escape(v)}"`;
+  const form = el.closest<HTMLElement>("[data-form]");
+  const scope = form ? `[data-form=${q(form.dataset.form!)}] ` : "";
+  const name = el.getAttribute("name");
+  if (name) return `${scope}[name=${q(name)}]`;
+  const d = el.dataset;
+  if (d.range) return `[data-range=${q(d.range)}]`;
+  if (d.field) return `[data-field=${q(d.field)}]`;
+  if (d.section) return `[data-section=${q(d.section)}]`;
+  if (d.seg) return `[data-seg=${q(d.seg)}][data-value=${q(d.value ?? "")}]`;
+  if (d.link) return `[data-link=${q(d.link)}]`;
+  if (d.action) return `${scope}[data-action=${q(d.action)}]${d.id ? `[data-id=${q(d.id)}]` : ""}`;
+  return null;
+}
+
 function render() {
-  const focused = document.activeElement as HTMLElement | null;
-  const focusKey = focused?.getAttribute("name") ?? focused?.dataset.range ?? null;
+  const focusKey = focusSelector(document.activeElement);
   document.title = `${t("appName")} — ${t("traySettings")}`;
   app.innerHTML = `<nav class="side">
       <div class="side-brand">${logoMark(26)}<span>Коли <em>Є</em></span></div>
@@ -302,8 +345,18 @@ function render() {
           ${esc(t(s.key))}</button>`,
       ).join("")}
     </nav>
-    <main class="content">${renderers[section]()}</main>`;
-  if (focusKey) app.querySelector<HTMLElement>(`[name="${focusKey}"], [data-range="${focusKey}"]`)?.focus();
+    <main class="content">${renderers[section]()}
+      <div class="toast-region" role="status" aria-live="polite">${
+        toast
+          ? `<div class="toast${toast.fresh ? " fresh" : ""}"><span>${esc(toast.text)}</span>${toast.undo ? `<button class="btn ghost sm" data-action="undo">${esc(t("undo"))}</button>` : ""}</div>`
+          : ""
+      }</div>
+    </main>`;
+  if (toast) toast.fresh = false;
+  if (!focusKey) return;
+  // A removed place takes its buttons with it: offer the undo button instead.
+  const target = app.querySelector<HTMLElement>(focusKey) ?? (toast?.undo ? app.querySelector<HTMLElement>('[data-action="undo"]') : null);
+  target?.focus();
 }
 
 /** True while the user is in the middle of an input that a re-render would reset. */
@@ -317,7 +370,38 @@ function newId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
+function movePlace(id: string, delta: number) {
+  const from = settings.places.findIndex((p) => p.id === id);
+  const to = from + delta;
+  if (from < 0 || to < 0 || to >= settings.places.length) return;
+  const places = [...settings.places];
+  const [item] = places.splice(from, 1);
+  places.splice(to, 0, item);
+  void update({ places });
+}
+
+function onKeyDown(e: KeyboardEvent) {
+  const el = e.target as HTMLElement;
+  const keys: Record<string, number> = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 };
+  const delta = keys[e.key];
+  if (delta === undefined) return;
+  if (el.dataset.action === "grip" && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+    e.preventDefault();
+    return movePlace(el.dataset.id!, delta);
+  }
+  if (el.dataset.seg) {
+    const options = [...(el.closest('[role="radiogroup"]')?.querySelectorAll<HTMLElement>("[data-seg]") ?? [])];
+    const i = options.indexOf(el);
+    const next = options[(i + delta + options.length) % options.length];
+    if (!next || next === el) return;
+    e.preventDefault();
+    next.focus();
+    next.click();
+  }
+}
+
 function wire() {
+  app.addEventListener("keydown", onKeyDown);
   app.addEventListener("click", async (e) => {
     const el = e.target as HTMLElement;
     const nav = el.closest<HTMLElement>("[data-section]");
@@ -353,17 +437,41 @@ function wire() {
         editingId = null;
         return render();
       case "remove": {
+        const index = settings.places.findIndex((p) => p.id === id);
+        if (index < 0) return;
+        const removed = settings.places[index];
+        const wasMain = mainPlace()?.id === id;
         const places = settings.places.filter((p) => p.id !== id);
         const mainPlaceId = settings.mainPlaceId === id ? (places[0]?.id ?? null) : settings.mainPlaceId;
+        showToast(t("placeRemoved", { place: removed.label }), () => {
+          if (settings.places.length >= MAX_PLACES || settings.places.some((p) => p.id === removed.id)) return;
+          const restored = [...settings.places];
+          restored.splice(Math.min(index, restored.length), 0, removed);
+          void update({ places: restored, mainPlaceId: wasMain ? removed.id : (settings.mainPlaceId ?? removed.id) });
+        });
         return update({ places, mainPlaceId });
+      }
+      case "undo": {
+        const undo = toast?.undo;
+        toast = null;
+        clearTimeout(toastTimer);
+        render();
+        return undo?.();
       }
       case "check-update":
         return checkForUpdate();
       case "install-update":
         return installUpdate();
       case "test-notification":
-        return sendTest(settings);
+        return showToast((await sendTest(settings)) ? t("testSent") : t("notifyBlocked"));
       case "refresh":
+        refreshingData = true;
+        clearTimeout(refreshGuard);
+        refreshGuard = window.setTimeout(() => {
+          refreshingData = false;
+          render();
+        }, 20_000);
+        render();
         return emit("refresh-request");
       case "reset":
         if (!confirm(t("resetConfirm"))) return;
@@ -481,6 +589,8 @@ async function main() {
   });
   await listen<DataState>("data-updated", (e) => {
     data = e.payload;
+    refreshingData = false;
+    clearTimeout(refreshGuard);
     if (!busy()) render();
   });
   onSystemThemeChange(() => {

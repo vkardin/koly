@@ -64,8 +64,9 @@ export function renderBar(segments: Segment[], opts: BarOptions = {}): string {
     labels = `<div class="bar-labels">${items.join("")}</div>`;
   }
 
+  const describe = describeSegments(segments);
   return `<div class="bar-wrap${opts.compact ? " compact" : ""}">
-    <div class="bar" role="img" aria-label="${esc(describeSegments(segments))}">${segs}${marker}</div>${labels}
+    <div class="bar" role="img" aria-label="${esc(describe)}" title="${esc(describe)}">${segs}${marker}</div>${labels}
   </div>`;
 }
 
@@ -81,7 +82,7 @@ function arcPath(cx: number, cy: number, r: number, a0: number, a1: number): str
 }
 
 /** 24-hour ring with the current-time marker. Midnight is at the top. */
-export function renderRing(segments: Segment[], nowMinutes: number, center: string, sub: string, state: SegmentState): string {
+export function renderRing(segments: Segment[], nowMinutes: number, center: string, sub: string, state: SegmentState | "none"): string {
   const size = 200;
   const c = size / 2;
   const r = 80;
