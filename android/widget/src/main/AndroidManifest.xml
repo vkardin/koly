@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name=".WidgetConfigActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Koly">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <receiver
+            android:name=".CardsSmallReceiver"
+            android:exported="false"
+            android:label="@string/widget_cards_small">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_cards_small" />
+        </receiver>
+        <receiver
+            android:name=".CardsMediumReceiver"
+            android:exported="false"
+            android:label="@string/widget_cards_medium">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_cards_medium" />
+        </receiver>
+        <receiver
+            android:name=".CardsLargeReceiver"
+            android:exported="false"
+            android:label="@string/widget_cards_large">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_cards_large" />
+        </receiver>
+        <receiver
+            android:name=".RingReceiver"
+            android:exported="false"
+            android:label="@string/widget_ring">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_ring" />
+        </receiver>
+        <receiver
+            android:name=".PillReceiver"
+            android:exported="false"
+            android:label="@string/widget_pill">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_pill" />
+        </receiver>
+        <receiver
+            android:name=".TextReceiver"
+            android:exported="false"
+            android:label="@string/widget_text">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_text" />
+        </receiver>
+        <receiver
+            android:name=".WidgetTickReceiver"
+            android:exported="false" />
+    </application>
+</manifest>

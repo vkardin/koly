@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Коли Є</string>
+    <string name="lang_uk" translatable="false">Українська</string>
+    <string name="lang_en" translatable="false">English</string>
+    <string name="lang_ru" translatable="false">Русский</string>
+
+    <!-- Navigation and common actions -->
+    <string name="nav_home">Головна</string>
+    <string name="nav_stats">Статистика</string>
+    <string name="nav_settings">Налаштування</string>
+    <string name="refresh">Оновити</string>
+    <string name="refresh_now">Оновити зараз</string>
+    <string name="retry">Спробувати ще</string>
+    <string name="next">Далі</string>
+    <string name="back">Назад</string>
+    <string name="save">Зберегти</string>
+    <string name="cancel">Скасувати</string>
+    <string name="add">Додати</string>
+    <string name="edit">Змінити</string>
+    <string name="remove">Видалити</string>
+    <string name="close">Закрити</string>
+    <string name="unofficial_app">неофіційний застосунок</string>
+
+    <!-- Status -->
+    <string name="light_on">Світло є</string>
+    <string name="light_off">Світла немає</string>
+    <string name="light_maybe">Можливе відключення</string>
+    <string name="no_data_today">Немає графіка на сьогодні</string>
+    <string name="no_schedules">Графіки не застосовуються</string>
+    <string name="no_schedules_hint">Зараз у вашій області планові відключення не діють.</string>
+    <string name="region_unavailable">Дані області недоступні</string>
+    <string name="change_off_until">о %1$s · до %2$s без світла</string>
+    <string name="change_off">о %1$s вимкнуть світло</string>
+    <string name="change_on">о %1$s світло повернеться</string>
+    <string name="change_maybe_until">о %1$s · до %2$s можливе відключення</string>
+    <string name="change_maybe">о %1$s можливе відключення</string>
+    <string name="no_changes_today">без змін до кінця доби</string>
+    <string name="off_in">вимкнуть через</string>
+    <string name="on_in">увімкнуть через</string>
+    <string name="maybe_in">можливе через</string>
+    <string name="still_on">є ще %1$s</string>
+    <string name="still_off">немає ще %1$s</string>
+    <string name="still_maybe">можливо ще %1$s</string>
+    <string name="countdown_description">%1$d год %2$d хв</string>
+    <string name="until_time">до %1$s</string>
+
+    <!-- Day bars -->
+    <string name="today">Сьогодні</string>
+    <string name="tomorrow">Завтра</string>
+    <string name="tomorrow_not_published">Графік на завтра ще не опубліковано</string>
+    <string name="now_at">зараз %1$s</string>
+    <string name="hours_short">%1$s год</string>
+    <string name="bar_on">світло є з %1$s до %2$s</string>
+    <string name="bar_off">немає з %1$s до %2$s</string>
+    <string name="bar_maybe">можливе відключення з %1$s до %2$s</string>
+
+    <!-- Freshness -->
+    <string name="updated_ago">Оновлено %1$s</string>
+    <string name="just_now">щойно</string>
+    <string name="min_ago">%1$d хв тому</string>
+    <string name="hours_ago">%1$d год тому</string>
+    <string name="days_ago">%1$d дн тому</string>
+    <string name="never_updated">Ще не оновлювалось</string>
+    <string name="data_stale">дані застаріли</string>
+    <string name="offline">офлайн</string>
+    <string name="region_stale">Джерело тимчасово недоступне — показано останній відомий графік.</string>
+    <string name="refresh_failed">Не вдалося оновити. Показано збережені дані.</string>
+
+    <!-- Emergency -->
+    <string name="emergency_title">Екстрені відключення</string>
+    <string name="emergency_body">Графіки можуть не діяти. Стежте за повідомленнями постачальника.</string>
+
+    <!-- Home view B -->
+    <string name="off_window">Без світла %1$s–%2$s</string>
+    <string name="maybe_window">Можливо %1$s–%2$s</string>
+    <string name="no_more_outages">Більше відключень сьогодні немає</string>
+    <string name="today_total">Сьогодні разом %1$s год без</string>
+    <string name="choose_place">Місце</string>
+    <plurals name="tomorrow_outages">
+        <item quantity="one">Завтра: %1$d відключення</item>
+        <item quantity="few">Завтра: %1$d відключення</item>
+        <item quantity="many">Завтра: %1$d відключень</item>
+        <item quantity="other">Завтра: %1$d відключення</item>
+    </plurals>
+    <string name="tomorrow_no_outages">Завтра: без відключень</string>
+
+    <!-- Home view C -->
+    <string name="next_today">Далі сьогодні</string>
+    <string name="event_off">вимкнення</string>
+    <string name="event_on">увімкнення</string>
+    <string name="event_maybe">можливе відключення</string>
+    <string name="nothing_more_today">Сьогодні більше змін немає</string>
+
+    <!-- Places -->
+    <string name="places_title">Місця</string>
+    <string name="places_count">%1$d з %2$d</string>
+    <string name="add_place">Додати місце</string>
+    <string name="edit_place">Змінити місце</string>
+    <string name="place_name">Назва</string>
+    <string name="place_name_hint">Дім, Робота, Батьки…</string>
+    <string name="region">Область</string>
+    <string name="group">Черга</string>
+    <string name="group_value">черга %1$s</string>
+    <string name="choose_region">Оберіть область</string>
+    <string name="choose_group">Оберіть чергу</string>
+    <string name="how_to_find_group">Як дізнатися свою чергу?</string>
+    <string name="how_to_find_group_body">Номер черги (групи) вказано на сайті вашого постачальника електроенергії: знайдіть свою адресу в його пошуку графіків. Інколи черга є в особистому кабінеті або рахунку.</string>
+    <string name="open_provider_site">Відкрити сайт постачальника</string>
+    <string name="main_badge">головне</string>
+    <string name="make_main">Зробити головним</string>
+    <string name="move_up">Вище</string>
+    <string name="move_down">Нижче</string>
+    <string name="limit_reached">Досягнуто ліміту — 10 місць</string>
+    <string name="remove_place_confirm">Видалити «%1$s»?</string>
+    <string name="default_place_label">Дім</string>
+    <string name="no_places">Додайте місце, щоб бачити графік</string>
+    <string name="status_region_off">немає даних</string>
+
+    <!-- Statistics -->
+    <string name="stats_title">Статистика</string>
+    <string name="stats_subtitle">Години без світла за 7 днів — за графіком</string>
+    <string name="stats_total">Разом за тиждень: %1$s год</string>
+    <string name="stats_maybe">Ще %1$s год можливих відключень</string>
+    <string name="stats_no_data">Поки що немає даних. Статистика збирається з графіків, які отримав застосунок.</string>
+    <string name="stats_day_description">%1$s: %2$s год без світла за графіком</string>
+    <string name="stats_by_schedule">за графіком</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Налаштування</string>
+    <string name="sec_appearance">Вигляд</string>
+    <string name="sec_places">Місця</string>
+    <string name="sec_notifications">Сповіщення</string>
+    <string name="sec_general">Загальні</string>
+    <string name="sec_about">Про застосунок</string>
+    <string name="home_view">Вигляд головного екрана</string>
+    <string name="view_a">Картка і смуга</string>
+    <string name="view_b">Кільце доби</string>
+    <string name="view_c">Усі місця списком</string>
+    <string name="recommended">рекомендовано</string>
+    <string name="change_anytime">Змінити можна будь-коли в налаштуваннях</string>
+    <string name="theme">Тема</string>
+    <string name="theme_system">Як у системі</string>
+    <string name="theme_light">Світла</string>
+    <string name="theme_dark">Темна</string>
+    <string name="dynamic_color">Кольори зі шпалер</string>
+    <string name="dynamic_color_hint">Material You; фірмовий бурштиновий колір статусу лишається</string>
+    <string name="before_off">Перед відключенням</string>
+    <string name="before_on">Перед поверненням світла</string>
+    <string name="schedule_changed">Коли графік змінився</string>
+    <string name="tomorrow_published">Коли опубліковано графік на завтра</string>
+    <string name="lead_time">Попереджати за</string>
+    <string name="minutes_short">%1$d хв</string>
+    <string name="for_places">Для місць</string>
+    <string name="for_main">Лише головне</string>
+    <string name="for_all">Усі</string>
+    <string name="quiet_night">Не турбувати вночі (23:00–07:00)</string>
+    <string name="exact_alarms">Точний час сповіщень</string>
+    <string name="exact_alarms_hint">Без цього дозволу сповіщення можуть приходити з затримкою в кілька хвилин</string>
+    <string name="exact_alarms_on">Дозволено</string>
+    <string name="allow">Дозволити</string>
+    <string name="notifications_blocked">Сповіщення вимкнено в системі</string>
+    <string name="open_system_settings">Відкрити налаштування</string>
+    <string name="test_notification">Перевірити сповіщення</string>
+    <string name="language">Мова</string>
+    <string name="data_updated">Дані оновлено %1$s</string>
+    <string name="reset_all">Скинути всі налаштування</string>
+    <string name="reset_confirm">Скинути всі налаштування та місця? Цю дію не можна скасувати.</string>
+    <string name="reset">Скинути</string>
+    <string name="version">Версія %1$s</string>
+    <string name="author">Автор: vkardin</string>
+    <string name="disclaimer_title">Неофіційний застосунок</string>
+    <string name="disclaimer_text">«Коли Є» — неофіційний застосунок. Він не пов’язаний з обленерго, постачальниками електроенергії чи державними органами. Дані беруться з відкритих джерел і можуть відрізнятися від актуальних. Офіційна інформація — на сайті постачальника вашої області.</string>
+    <string name="data_source">Джерело даних для області</string>
+    <string name="website">vkardin.github.io</string>
+    <string name="privacy">Політика конфіденційності</string>
+    <string name="report_error">Повідомити про помилку в графіку</string>
+    <string name="ad_slot_label">Місце для реклами</string>
+
+    <!-- Onboarding -->
+    <string name="onb_step">Крок %1$d з %2$d</string>
+    <string name="onb_welcome">Графіки відключень світла для вашої черги</string>
+    <string name="onb_language_title">Мова</string>
+    <string name="onb_change_language">Змінити мову · Change language</string>
+    <string name="onb_region_title">Ваша область</string>
+    <string name="onb_group_title">Ваша черга</string>
+    <string name="onb_view_title">Вигляд головного екрана</string>
+    <string name="onb_notify_title">Сповіщення</string>
+    <string name="onb_notify_body">Попередимо заздалегідь перед відключенням і перед поверненням світла, а також коли графік зміниться.</string>
+    <string name="onb_notify_allow">Дозволити сповіщення</string>
+    <string name="onb_notify_granted">Сповіщення дозволено</string>
+    <string name="onb_notify_denied">Сповіщення можна увімкнути пізніше в налаштуваннях</string>
+    <string name="onb_disclaimer_title">Важливо</string>
+    <string name="onb_accept">Зрозуміло, почати</string>
+    <string name="loading">Завантаження…</string>
+    <string name="load_failed">Не вдалося завантажити список областей. Перевірте з’єднання з інтернетом.</string>
+    <string name="region_no_schedules_badge">графіки не діють</string>
+
+    <!-- Notifications -->
+    <string name="channel_before_off">Перед відключенням</string>
+    <string name="channel_before_on">Перед поверненням світла</string>
+    <string name="channel_changes">Зміни графіка</string>
+    <string name="n_off_title">%1$s: відключення через %2$d хв</string>
+    <string name="n_off_body">Світла не буде з %1$s до %2$s.</string>
+    <string name="n_off_body_open">Світла не буде з %1$s.</string>
+    <string name="n_maybe_title">%1$s: можливе відключення через %2$d хв</string>
+    <string name="n_maybe_body">Можливе відключення з %1$s.</string>
+    <string name="n_on_title">%1$s: світло повернеться через %2$d хв</string>
+    <string name="n_on_body">Очікується о %1$s.</string>
+    <string name="n_changed_title">%1$s: графік змінився</string>
+    <string name="n_changed_body">Перевірте оновлений графік на сьогодні.</string>
+    <string name="n_tomorrow_title">%1$s: опубліковано графік на завтра</string>
+    <plurals name="n_tomorrow_body">
+        <item quantity="one">Завтра заплановано %1$d відключення.</item>
+        <item quantity="few">Завтра заплановано %1$d відключення.</item>
+        <item quantity="many">Завтра заплановано %1$d відключень.</item>
+        <item quantity="other">Завтра заплановано %1$d відключення.</item>
+    </plurals>
+    <string name="n_tomorrow_body_none">Завтра відключень не заплановано.</string>
+    <string name="n_test_body">Сповіщення працюють.</string>
+
+    <!-- Widgets -->
+    <string name="widget_cards_small">Картка · мала</string>
+    <string name="widget_cards_medium">Картка зі смугою доби</string>
+    <string name="widget_cards_large">Кілька місць</string>
+    <string name="widget_ring">Кільце доби</string>
+    <string name="widget_pill">Таблетка</string>
+    <string name="widget_text">Текст на шпалерах</string>
+    <string name="widget_cards_description">Статус і відлік до зміни</string>
+    <string name="widget_minimal_description">Мінімальний вигляд у кольорах шпалер</string>
+    <string name="widget_choose_place">Оберіть місце для віджета</string>
+    <string name="widget_no_places">Відкрийте застосунок і додайте місце</string>
+    <string name="widget_open_app">Відкрити «Коли Є»</string>
+    <string name="widget_preview_place">Дім · черга 3.1</string>
+    <string name="widget_preview_change">о 18:00 · до 22:00 без світла</string>
+    <string name="widget_preview_until">до 18:00</string>
+    <string name="widget_preview_next">Без світла 18:00–22:00</string>
+    <string name="widget_preview_work">Робота</string>
+    <string name="widget_preview_parents">Батьки</string>
+    <string name="widget_preview_countdown" translatable="false">2:14</string>
+    <string name="w_until_off">до відключення %1$s</string>
+    <string name="w_until_on">до увімкнення %1$s</string>
+    <string name="w_until_maybe">до можливого відключення %1$s</string>
+    <string name="duration_hm">%1$d год %2$d хв</string>
+    <string name="duration_h">%1$d год</string>
+    <string name="duration_m">%1$d хв</string>
+    <string name="total_off">Загалом: %1$s</string>
+    <string name="maybe_short">можливо</string>
+    <string name="widget_theme">Тема віджета</string>
+    <string name="widget_theme_dark">Темна</string>
+    <string name="widget_theme_light">Світла</string>
+    <string name="widget_theme_system">Як у системі</string>
+    <string name="widget_preview_place_short">Дім</string>
+    <string name="widget_preview_group">черга 3.1</string>
+    <string name="widget_preview_until_off">до відключення 2 год 14 хв</string>
+    <string name="widget_preview_3h">3 год</string>
+    <string name="widget_preview_3h30">3 год 30 хв</string>
+    <string name="widget_preview_2h">2 год</string>
+    <string name="widget_preview_total">Загалом: 8 год 30 хв</string>
+    <string name="widget_theme_hint">Одна тема для всіх віджетів. «Як у системі» перемикає світлу й темну разом із телефоном, а «Мінімал» бере кольори шпалер.</string>
+</resources>
