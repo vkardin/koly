@@ -172,6 +172,24 @@ def test_mykolaiv_unknown_type():
         mykolaivoblenergo.parse(schedule, load("mykolaivoblenergo_queues.json"), load("mykolaivoblenergo_series.json"))
 
 
+def test_mykolaiv_sure_off_and_enable():
+    # Live response from 2026-11-08: the site added SURE_OFF ("Актуальне відключення").
+    queues = load("mykolaivoblenergo_queues.json")
+    series = load("mykolaivoblenergo_series.json")
+    s = mykolaivoblenergo.parse(load("mykolaivoblenergo_schedule_sure_off.json"), queues, series)
+    assert [d.date for d in s.days] == ["2026-11-08"]
+    # Queue 15 is 1.2; slots 1-5 are SURE_OFF.
+    assert iv(s, "1.2", "2026-11-08")[0] == ("00:00", "02:30", "off")
+    valid(s)
+
+    schedule = load("mykolaivoblenergo_schedule.json")
+    before = iv(mykolaivoblenergo.parse(schedule, queues, series), "1.1")
+    schedule[0]["series"].append(
+        {"time_series_id": 48, "outage_queue_id": 14, "type": "ENABLE", "updated_at": None}
+    )
+    assert iv(mykolaivoblenergo.parse(schedule, queues, series), "1.1") == before
+
+
 def test_lviv_latest_item_for_a_date():
     s = lvivoblenergo.parse(load("lvivoblenergo.json"), date(2026, 10, 17))
     assert s.updated_at == "2026-10-17T18:56:00+03:00"
