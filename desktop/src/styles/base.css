@@ -140,6 +140,10 @@ button {
   border: 0;
 }
 
+.state-none {
+  color: var(--text-2);
+}
+
 /* Day strip */
 .bar-wrap {
   position: relative;

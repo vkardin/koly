@@ -104,7 +104,7 @@ export function renderRing(segments: Segment[], nowMinutes: number, center: stri
       return `<text class="ring-tick" x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="middle">${String(h).padStart(2, "0")}</text>`;
     })
     .join("");
-  return `<svg class="ring" viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(describeSegments(segments))}">
+  return `<svg class="ring" viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(segments.length ? describeSegments(segments) : sub)}">
     <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <rect width="6" height="6" class="hatch-bg"/><rect width="3" height="6" class="hatch-fg"/></pattern></defs>
     <circle cx="${c}" cy="${c}" r="${r}" class="ring-track"/>

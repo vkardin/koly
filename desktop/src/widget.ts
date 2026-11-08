@@ -98,8 +98,29 @@ function emergencyBanner(places: Place[]): string {
   return `<div class="emergency" role="alert">⚡ ${esc(t("emergency"))}${note ? ` — ${esc(note)}` : ""}</div>`;
 }
 
+/** Short warnings for the compact views, which have no footer: emergency, offline, stale, demo. */
+function compactAlerts(place: Place): string {
+  const region = data.regions[place.regionId];
+  const items: string[] = [];
+  if (region?.emergency?.active) items.push(`⚡ ${t("emergency")}`);
+  if (data.demo) items.push(t("demo"));
+  else if (data.offline) items.push(t("offline"));
+  if (!data.demo && region?.status === "stale") items.push(t("stale"));
+  return items.length ? `<div class="compact-alert" role="status">${esc(items.join(" · "))}</div>` : "";
+}
+
+function changeAtText(ps: PlaceStatus): string {
+  return ps.changeAt != null ? t("untilTime", { time: formatHm(ps.changeAt % 1440) }) : "";
+}
+
+function settingsButton(): string {
+  return `<button class="icon-btn" data-action="settings" title="${esc(t("openSettings"))}" aria-label="${esc(t("openSettings"))}">
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm7.4-2.5a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1c.5.4 1.1.8 1.7 1l.4 2.5h4l.4-2.5c.6-.2 1.2-.6 1.7-1l2.4 1 2-3.4-2-1.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+  </button>`;
+}
+
 function refreshButton(): string {
-  return `<button class="icon-btn${refreshing ? " spinning" : ""}" data-action="refresh" title="${esc(t("refresh"))}" aria-label="${esc(t("refresh"))}">
+  return `<button class="icon-btn${refreshing ? " spinning" : ""}" data-action="refresh" title="${esc(t("refresh"))}" aria-label="${esc(t("refresh"))}" aria-busy="${refreshing}" aria-disabled="${refreshing}">
     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>`;
 }
@@ -115,21 +136,18 @@ function renderStrip(): string {
   const now = kyivNow();
   const issue = placeIssue(place);
   const ps = placeStatus(data.regions[place.regionId], place.group, now);
-  const state = issue ? "none" : ps.state;
-  const count = issue || ps.untilChange == null ? "—" : formatCountdown(ps.untilChange);
-  let caption: string;
-  if (issue) caption = issue;
-  else if (ps.untilChange == null) caption = `${stateLabel(ps.state)} · ${t("noChangesToday")}`;
-  else caption = `${t("stateUntil", { state: stateLabel(ps.state), time: formatHm(ps.changeAt!) })} · ${inText(ps)}`;
-  const spoken = spokenStatus(place, ps, issue);
-  return `<div class="widget strip" role="group" aria-label="${esc(spoken)}" title="${esc(spoken)}">
-    <span class="dot state-${state}" aria-hidden="true"></span>
-    <div class="strip-text" aria-hidden="true">
-      <div class="strip-place"><span class="strip-label">${esc(place.label)}</span>${warningBadge(place)}</div>
-      <div class="strip-caption">${esc(caption)}</div>
+  const count = issue ? "—" : ps.untilChange != null ? formatCountdown(ps.untilChange) : "—";
+  const caption = issue ?? (ps.untilChange != null ? inText(ps) : t("noChangesToday"));
+  const tip = issue ?? [stateLabel(ps.state), changeAtText(ps)].filter(Boolean).join(" · ");
+  return `<div class="widget strip" title="${esc(tip)}">
+    <span class="dot state-${issue ? "none" : ps.state}" aria-hidden="true"></span>
+    <div class="strip-text">
+      <div class="strip-place">${esc(place.label)}</div>
+      <div class="strip-caption">${esc(issue ? caption : `${stateLabel(ps.state)} · ${caption}`)}</div>
+      ${compactAlerts(place)}
     </div>
-    <div class="count state-${state}" aria-hidden="true">${count}</div>
-    ${refreshButton()}
+    <div class="count state-${issue ? "none" : ps.state}">${count}</div>
+    <div class="strip-actions">${refreshButton()}${settingsButton()}</div>
   </div>`;
 }
 
@@ -142,7 +160,7 @@ function renderCardPlace(place: Place): string {
   let countLine: string;
   if (issue) countLine = `<span class="muted">${esc(issue)}</span>`;
   else if (ps.untilChange != null)
-    countLine = `<span class="muted">${esc(stillText(ps))}</span> <b class="count-sm state-${ps.state}">${formatCountdown(ps.untilChange)}</b> <span class="until muted">${esc(untilText(ps))}</span>`;
+    countLine = `<span class="muted">${esc(stillText(ps))}</span> <b class="count-sm state-${ps.state}">${formatCountdown(ps.untilChange)}</b> <span class="muted change-at">${esc(changeAtText(ps))}</span>`;
   else countLine = `<span class="muted">${esc(t("noChangesToday"))}</span>`;
   const bar = !issue && ps.hasToday ? renderBar(ps.today, { nowMinutes: now.minutes, labels: isMain, durations: isMain, compact: !isMain }) : "";
   const tomorrow =
@@ -169,9 +187,7 @@ function renderCard(): string {
       <div class="head-right">
         <span class="muted small" title="${esc(t("updatedAgo", { ago: agoText(data.checkedAt) }))}">${esc(agoText(data.checkedAt))}</span>
         ${refreshButton()}
-        <button class="icon-btn" data-action="settings" title="${esc(t("openSettings"))}" aria-label="${esc(t("openSettings"))}">
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm7.4-2.5a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1c.5.4 1.1.8 1.7 1l.4 2.5h4l.4-2.5c.6-.2 1.2-.6 1.7-1l2.4 1 2-3.4-2-1.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-        </button>
+        ${settingsButton()}
       </div>
     </div>
     ${emergencyBanner(places)}
@@ -188,16 +204,15 @@ function renderRingView(): string {
   const now = kyivNow();
   const issue = placeIssue(place);
   const ps = placeStatus(data.regions[place.regionId], place.group, now);
-  const center = issue || ps.untilChange == null ? "—" : formatCountdown(ps.untilChange);
+  const center = issue ? "—" : ps.untilChange != null ? formatCountdown(ps.untilChange) : "—";
   const sub = issue ?? (ps.changeAt != null ? inText(ps) : t("noChangesToday"));
-  // Without today's data the ring stays an empty track: never draw a missing day as "power on".
-  const segments = issue ? [] : ps.today;
-  const spoken = spokenStatus(place, ps, issue);
-  const foot = issue ? "" : `${esc(stateLabel(ps.state))}${ps.changeAt != null ? ` · ${esc(untilText(ps))}` : ""}`;
-  return `<div class="widget ring-view" role="group" aria-label="${esc(spoken)}" title="${esc(spoken)}">
-    <div class="ring-head"><span class="place-label">${esc(place.label)}</span>${warningBadge(place)}</div>
-    ${renderRing(segments, now.minutes, center, sub, issue ? "none" : ps.state)}
-    ${foot ? `<div class="ring-foot muted small">${foot}</div>` : ""}
+  const foot = issue ? "" : [stateLabel(ps.state), changeAtText(ps)].filter(Boolean).join(" · ");
+  return `<div class="widget ring-view">
+    <div class="ring-actions">${refreshButton()}${settingsButton()}</div>
+    <div class="ring-head"><span class="place-label">${esc(place.label)}</span></div>
+    ${renderRing(issue ? [] : ps.today, now.minutes, center, sub, issue ? "none" : ps.state)}
+    ${foot ? `<div class="ring-foot muted small">${esc(foot)}</div>` : ""}
+    ${compactAlerts(place)}
   </div>`;
 }
 
@@ -221,11 +236,9 @@ function render() {
   if (!settings || !data) return;
   document.body.dataset.view = settings.view;
   document.body.classList.toggle("locked", settings.lockPosition);
-  const html = renderers[settings.view]();
-  // Skip identical frames so hover, focus and tooltips survive the minute tick.
-  if (html === lastHtml) return;
-  lastHtml = html;
-  root.innerHTML = html;
+  const focused = (document.activeElement as HTMLElement | null)?.dataset.action;
+  root.innerHTML = renderers[settings.view]();
+  if (focused) root.querySelector<HTMLElement>(`[data-action="${focused}"]`)?.focus();
   void fitWindow();
 }
 
