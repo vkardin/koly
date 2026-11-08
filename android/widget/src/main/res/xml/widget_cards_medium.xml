@@ -10,6 +10,7 @@
     android:maxResizeWidth="520dp"
     android:maxResizeHeight="520dp"
     android:previewLayout="@layout/widget_preview_cards_medium"
+    android:previewImage="@drawable/widget_preview_cards_medium_image"
     android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen"
     android:description="@string/widget_cards_description"
