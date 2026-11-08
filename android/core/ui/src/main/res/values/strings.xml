@@ -250,4 +250,11 @@
     <string name="widget_theme_dark">Темна</string>
     <string name="widget_theme_light">Світла</string>
     <string name="widget_theme_system">Як у системі</string>
+    <string name="widget_preview_place_short">Дім</string>
+    <string name="widget_preview_group">черга 3.1</string>
+    <string name="widget_preview_until_off">до відключення 2 год 14 хв</string>
+    <string name="widget_preview_3h">3 год</string>
+    <string name="widget_preview_3h30">3 год 30 хв</string>
+    <string name="widget_preview_2h">2 год</string>
+    <string name="widget_preview_total">Загалом: 8 год 30 хв</string>
 </resources>

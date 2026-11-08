@@ -229,4 +229,11 @@
     <string name="widget_theme_dark">Dark</string>
     <string name="widget_theme_light">Light</string>
     <string name="widget_theme_system">Same as system</string>
+    <string name="widget_preview_place_short">Home</string>
+    <string name="widget_preview_group">group 3.1</string>
+    <string name="widget_preview_until_off">outage in 2 h 14 min</string>
+    <string name="widget_preview_3h">3 h</string>
+    <string name="widget_preview_3h30">3 h 30 min</string>
+    <string name="widget_preview_2h">2 h</string>
+    <string name="widget_preview_total">Total: 8 h 30 min</string>
 </resources>

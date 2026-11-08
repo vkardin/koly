@@ -233,4 +233,11 @@
     <string name="widget_theme_dark">Тёмная</string>
     <string name="widget_theme_light">Светлая</string>
     <string name="widget_theme_system">Как в системе</string>
+    <string name="widget_preview_place_short">Дом</string>
+    <string name="widget_preview_group">очередь 3.1</string>
+    <string name="widget_preview_until_off">до отключения 2 ч 14 мин</string>
+    <string name="widget_preview_3h">3 ч</string>
+    <string name="widget_preview_3h30">3 ч 30 мин</string>
+    <string name="widget_preview_2h">2 ч</string>
+    <string name="widget_preview_total">Всего: 8 ч 30 мин</string>
 </resources>

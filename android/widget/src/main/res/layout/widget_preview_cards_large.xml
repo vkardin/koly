@@ -1,11 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/widget_bg_cards" android:orientation="vertical" android:gravity="center_vertical" android:padding="14dp">
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/app_name" android:textSize="14sp" android:textColor="#FFC24A" android:textStyle="bold" android:maxLines="1" />
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/default_place_label" android:textSize="13sp" android:textColor="#F4F6FB" android:layout_marginTop="6dp" android:maxLines="1" />
-        <ImageView android:layout_width="match_parent" android:layout_height="10dp" android:layout_marginTop="3dp" android:scaleType="fitXY" android:src="@drawable/widget_preview_bar" android:importantForAccessibility="no" />
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/widget_preview_work" android:textSize="13sp" android:textColor="#F4F6FB" android:layout_marginTop="6dp" android:maxLines="1" />
-        <ImageView android:layout_width="match_parent" android:layout_height="10dp" android:layout_marginTop="3dp" android:scaleType="fitXY" android:src="@drawable/widget_preview_bar" android:importantForAccessibility="no" />
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/widget_preview_parents" android:textSize="13sp" android:textColor="#F4F6FB" android:layout_marginTop="6dp" android:maxLines="1" />
-        <ImageView android:layout_width="match_parent" android:layout_height="10dp" android:layout_marginTop="3dp" android:scaleType="fitXY" android:src="@drawable/widget_preview_bar" android:importantForAccessibility="no" />
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/tomorrow" android:textSize="11sp" android:textColor="#AEB6CA" android:layout_marginTop="8dp" android:maxLines="1" />
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/widget_bg_cards" android:orientation="vertical" android:padding="12dp">
+<TextView android:layout_width="wrap_content"  android:layout_height="wrap_content" android:text="@string/app_name" android:textSize="14sp" android:textColor="#FFC24A" android:textStyle="bold" android:maxLines="1" /><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:orientation="horizontal" android:gravity="center_vertical">
+    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+        <TextView android:layout_width="wrap_content"  android:layout_height="wrap_content" android:text="@string/default_place_label" android:textSize="13sp" android:textColor="#F4F6FB" android:textStyle="bold" android:maxLines="1" />
+        <TextView android:layout_width="wrap_content"  android:layout_height="wrap_content" android:text="@string/widget_preview_until_off" android:textSize="11sp" android:textColor="#AEB6CA"  android:maxLines="1" />
+    </LinearLayout>
+    <TextView android:layout_width="wrap_content"  android:layout_height="wrap_content" android:text="@string/widget_preview_countdown" android:textSize="18sp" android:textColor="#FFC24A" android:textStyle="bold" android:maxLines="1" />
+</LinearLayout>
+<ImageView android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginTop="3dp" android:scaleType="fitXY" android:src="@drawable/widget_preview_bar" android:importantForAccessibility="no" /><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:orientation="horizontal" android:gravity="center_vertical">
+    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+        <TextView android:layout_width="wrap_content"  android:layout_height="wrap_content" android:text="@string/widget_preview_work" android:textSize="13sp" android:textColor="#F4F6FB" android:textStyle="bold" android:maxLines="1" />
+        <TextView android:layout_width="wrap_content"  android:layout_height="wrap_content" android:text="@string/widget_preview_until_off" android:textSize="11sp" android:textColor="#AEB6CA"  android:maxLines="1" />
+    </LinearLayout>
+    <TextView android:layout_width="wrap_content"  android:layout_height="wrap_content" android:text="@string/widget_preview_countdown" android:textSize="18sp" android:textColor="#FFC24A" android:textStyle="bold" android:maxLines="1" />
+</LinearLayout>
+<ImageView android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginTop="3dp" android:scaleType="fitXY" android:src="@drawable/widget_preview_bar" android:importantForAccessibility="no" /><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:orientation="horizontal" android:gravity="center_vertical">
+    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+        <TextView android:layout_width="wrap_content"  android:layout_height="wrap_content" android:text="@string/widget_preview_parents" android:textSize="13sp" android:textColor="#F4F6FB" android:textStyle="bold" android:maxLines="1" />
+        <TextView android:layout_width="wrap_content"  android:layout_height="wrap_content" android:text="@string/widget_preview_until_off" android:textSize="11sp" android:textColor="#AEB6CA"  android:maxLines="1" />
+    </LinearLayout>
+    <TextView android:layout_width="wrap_content"  android:layout_height="wrap_content" android:text="@string/widget_preview_countdown" android:textSize="18sp" android:textColor="#FFC24A" android:textStyle="bold" android:maxLines="1" />
+</LinearLayout>
+<ImageView android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginTop="3dp" android:scaleType="fitXY" android:src="@drawable/widget_preview_bar" android:importantForAccessibility="no" />
 </LinearLayout>
