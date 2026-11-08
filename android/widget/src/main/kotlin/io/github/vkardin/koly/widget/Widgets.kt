@@ -266,39 +266,48 @@ private fun IntervalList(
 ) {
     val ctx = LocalContext.current
     val outages = segments.filter { it.state != PowerState.ON }
-    Text(title, style = style(s.text, 12.sp, true), maxLines = 1)
-    if (outages.isEmpty()) {
-        Text(ctx.getString(UiR.string.no_more_outages), style = style(s.secondary, 12.sp), maxLines = 1)
-        return
-    }
-    // When space is short, skip the outages that are already over.
-    val visible = if (outages.size > maxRows && nowMinutes != null) {
-        outages.filter { it.end > nowMinutes }.ifEmpty { outages }.take(maxRows)
-    } else {
-        outages.take(maxRows)
-    }
-    for (o in visible) {
-        val past = nowMinutes != null && o.end <= nowMinutes
-        val current = nowMinutes != null && nowMinutes >= o.start && nowMinutes < o.end
-        val color = if (past) s.secondary else s.text
-        Spacer(GlanceModifier.height(3.dp))
-        Row(
-            GlanceModifier.fillMaxWidth().background(ImageProvider(s.row)).padding(horizontal = 8.dp, vertical = 3.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Dot(o.state, 7)
-            Spacer(GlanceModifier.width(6.dp))
-            val range = formatHm(o.start) + "–" + formatHm(o.end, allowMidnightEnd = true)
-            val suffix = if (o.state == PowerState.MAYBE) " · " + ctx.getString(UiR.string.maybe_short) else ""
-            Text(range + suffix, style = style(color, 13.sp, current), maxLines = 1, modifier = GlanceModifier.defaultWeight())
-            Text(duration(ctx, o.length), style = style(s.secondary, 12.sp), maxLines = 1)
+    // A widget Column holds at most 10 children, so rows are capped and grouped.
+    val rows = maxRows.coerceIn(1, 6)
+    Column(GlanceModifier.fillMaxWidth()) {
+        Text(title, style = style(s.text, 12.sp, true), maxLines = 1)
+        if (outages.isEmpty()) {
+            Text(ctx.getString(UiR.string.no_more_outages), style = style(s.secondary, 12.sp), maxLines = 1)
+            return@Column
         }
-    }
-    if (showTotal) {
-        val off = segments.filter { it.state == PowerState.OFF }.sumOf { it.length }
-        if (off > 0) {
-            Spacer(GlanceModifier.height(4.dp))
-            Text(ctx.getString(UiR.string.total_off, duration(ctx, off)), style = style(s.total, 13.sp, true), maxLines = 1)
+        // When space is short, skip the outages that are already over.
+        val visible = if (outages.size > rows && nowMinutes != null) {
+            outages.filter { it.end > nowMinutes }.ifEmpty { outages }.take(rows)
+        } else {
+            outages.take(rows)
+        }
+        for (o in visible) {
+            val past = nowMinutes != null && o.end <= nowMinutes
+            val current = nowMinutes != null && nowMinutes >= o.start && nowMinutes < o.end
+            val color = if (past) s.secondary else s.text
+            Column(GlanceModifier.fillMaxWidth().padding(top = 3.dp)) {
+                Row(
+                    GlanceModifier.fillMaxWidth().background(ImageProvider(s.row)).padding(horizontal = 8.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Dot(o.state, 7)
+                    Spacer(GlanceModifier.width(6.dp))
+                    val range = formatHm(o.start) + "–" + formatHm(o.end, allowMidnightEnd = true)
+                    val suffix = if (o.state == PowerState.MAYBE) " · " + ctx.getString(UiR.string.maybe_short) else ""
+                    Text(range + suffix, style = style(color, 13.sp, current), maxLines = 1, modifier = GlanceModifier.defaultWeight())
+                    Text(duration(ctx, o.length), style = style(s.secondary, 12.sp), maxLines = 1)
+                }
+            }
+        }
+        if (showTotal) {
+            val off = segments.filter { it.state == PowerState.OFF }.sumOf { it.length }
+            if (off > 0) {
+                Text(
+                    ctx.getString(UiR.string.total_off, duration(ctx, off)),
+                    style = style(s.total, 13.sp, true),
+                    maxLines = 1,
+                    modifier = GlanceModifier.padding(top = 4.dp),
+                )
+            }
         }
     }
 }
@@ -316,11 +325,10 @@ private fun NoPlace(s: CardStyle = CardStyle.DARK) {
 
 /** Size buckets: Glance renders the largest one that fits, so resizing changes the layout. */
 private val SIZES = setOf(
-    DpSize(110.dp, 40.dp), DpSize(180.dp, 40.dp), DpSize(260.dp, 40.dp),
-    DpSize(110.dp, 110.dp), DpSize(180.dp, 110.dp), DpSize(260.dp, 110.dp), DpSize(340.dp, 110.dp),
-    DpSize(110.dp, 180.dp), DpSize(180.dp, 180.dp), DpSize(260.dp, 180.dp), DpSize(340.dp, 180.dp),
-    DpSize(110.dp, 260.dp), DpSize(180.dp, 260.dp), DpSize(260.dp, 260.dp), DpSize(340.dp, 260.dp),
-    DpSize(180.dp, 340.dp), DpSize(260.dp, 340.dp), DpSize(340.dp, 340.dp),
+    DpSize(110.dp, 40.dp), DpSize(250.dp, 40.dp),
+    DpSize(110.dp, 110.dp), DpSize(180.dp, 110.dp), DpSize(250.dp, 110.dp),
+    DpSize(110.dp, 180.dp), DpSize(250.dp, 180.dp),
+    DpSize(110.dp, 260.dp), DpSize(250.dp, 260.dp), DpSize(250.dp, 340.dp),
 )
 
 abstract class KolyWidget : GlanceAppWidget() {
@@ -380,28 +388,30 @@ private fun PlaceCard(model: WidgetModel) {
             shortCountdown(v)?.let { Text(it, style = style(s.text, 30.sp, true), maxLines = 1) }
             untilText(ctx, v)?.let { Text(it, style = style(s.secondary, 12.sp), maxLines = 1) }
             if (h >= 180 && v.hasData) {
-                Spacer(GlanceModifier.height(6.dp))
                 IntervalList(ctx.getString(UiR.string.today), v.status.today, model.now.minutes, s, rowsFor(h - 170), showTotal = h >= 220)
             }
             return@Column
         }
         StatusBlock(v, s, bigCountdown = true)
         if (!v.hasData) return@Column
-        if (h >= 110) {
-            Spacer(GlanceModifier.height(6.dp))
-            DayImage(v.status.today, model.now.minutes, inner, 8f, s.palette)
-        }
-        if (h >= 170) {
-            Spacer(GlanceModifier.height(6.dp))
-            val hasTomorrow = v.status.tomorrow != null && h >= 300
-            val rowsToday = rowsFor(h - 150 - (if (hasTomorrow) 90 else 0) - 20)
-            IntervalList(ctx.getString(UiR.string.today), v.status.today, model.now.minutes, s, rowsToday.coerceAtLeast(1), showTotal = true)
-            if (hasTomorrow) {
-                Spacer(GlanceModifier.height(6.dp))
-                IntervalList(ctx.getString(UiR.string.tomorrow), v.status.tomorrow!!, null, s, 2, showTotal = false)
-            } else if (h >= 260) {
-                Spacer(GlanceModifier.height(4.dp))
-                Text(tomorrowText(ctx, v), style = style(s.secondary, 11.sp), maxLines = 1)
+        // Grouped so that no widget Column gets more than 10 children.
+        Column(GlanceModifier.fillMaxWidth()) {
+            if (h >= 110) {
+                Box(GlanceModifier.padding(top = 6.dp)) { DayImage(v.status.today, model.now.minutes, inner, 8f, s.palette) }
+            }
+            if (h >= 170) {
+                val hasTomorrow = v.status.tomorrow != null && h >= 300
+                val rowsToday = rowsFor(h - 150 - (if (hasTomorrow) 90 else 0) - 20)
+                Box(GlanceModifier.padding(top = 6.dp)) {
+                    IntervalList(ctx.getString(UiR.string.today), v.status.today, model.now.minutes, s, rowsToday, showTotal = true)
+                }
+                if (hasTomorrow) {
+                    Box(GlanceModifier.padding(top = 6.dp)) {
+                        IntervalList(ctx.getString(UiR.string.tomorrow), v.status.tomorrow!!, null, s, 2, showTotal = false)
+                    }
+                } else if (h >= 260) {
+                    Text(tomorrowText(ctx, v), style = style(s.secondary, 11.sp), maxLines = 1, modifier = GlanceModifier.padding(top = 4.dp))
+                }
             }
         }
         if (h >= 220) {
@@ -434,7 +444,7 @@ class CardsLargeWidget : KolyWidget() {
         val h = size.height.value
         val inner = w - 24
         val perPlace = 50f
-        val places = ((h - 40) / perPlace).toInt().coerceIn(1, model.views.size)
+        val places = ((h - 40) / perPlace).toInt().coerceIn(1, minOf(4, model.views.size))
         // Height left after the places goes to the outage list of the first place.
         val spare = h - 40 - places * perPlace
         Column(GlanceModifier.fillMaxSize().background(ImageProvider(s.background)).padding(12.dp).openOnClick(ctx)) {
@@ -443,30 +453,29 @@ class CardsLargeWidget : KolyWidget() {
                 if (w >= 220) Text(updatedText(ctx, model, null), style = style(s.secondary, 10.sp), maxLines = 1)
             }
             for (v in model.views.take(places)) {
-                Spacer(GlanceModifier.height(6.dp))
-                Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    if (v.hasData) {
-                        Dot(v.status.state, 9)
-                        Spacer(GlanceModifier.width(6.dp))
-                    }
-                    Column(GlanceModifier.defaultWeight()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(v.place.label, style = style(s.text, 13.sp, true), maxLines = 1)
+                Column(GlanceModifier.fillMaxWidth().padding(top = 6.dp)) {
+                    Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        if (v.hasData) {
+                            Dot(v.status.state, 9)
                             Spacer(GlanceModifier.width(6.dp))
-                            Badge(v.place.group, s)
                         }
-                        Text(untilChangeText(ctx, v) ?: stateText(ctx, v), style = style(s.secondary, 11.sp), maxLines = 1)
+                        Column(GlanceModifier.defaultWeight()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(v.place.label, style = style(s.text, 13.sp, true), maxLines = 1)
+                                Spacer(GlanceModifier.width(6.dp))
+                                Badge(v.place.group, s)
+                            }
+                            Text(untilChangeText(ctx, v) ?: stateText(ctx, v), style = style(s.secondary, 11.sp), maxLines = 1)
+                        }
+                        shortCountdown(v)?.let { Text(it, style = style(s.state(v.status.state), 18.sp, true)) }
                     }
-                    shortCountdown(v)?.let { Text(it, style = style(s.state(v.status.state), 18.sp, true)) }
-                }
-                if (v.hasData) {
-                    Spacer(GlanceModifier.height(3.dp))
-                    DayImage(v.status.today, model.now.minutes, inner, 8f, s.palette)
+                    if (v.hasData) {
+                        Box(GlanceModifier.padding(top = 3.dp)) { DayImage(v.status.today, model.now.minutes, inner, 8f, s.palette) }
+                    }
                 }
             }
             val first = model.views.first()
             if (spare >= 70 && first.hasData) {
-                Spacer(GlanceModifier.height(8.dp))
                 IntervalList(
                     ctx.getString(UiR.string.today) + " · " + first.place.label,
                     first.status.today,
@@ -494,7 +503,8 @@ class RingWidget : KolyWidget() {
             val h = size.height.value
             val wide = w >= h * 1.6f && w >= 220
             val side = if (wide) h else minOf(w, h)
-            val density = ctx.resources.displayMetrics.density
+            // Ring bitmaps are capped in size: every size bucket carries its own copy.
+            val ringPx = (side * ctx.resources.displayMetrics.density).toInt().coerceAtMost(420)
             val onSurface = GlanceTheme.colors.onSurface
             val variant = GlanceTheme.colors.onSurfaceVariant
             val ring = @Composable {
@@ -505,7 +515,7 @@ class RingWidget : KolyWidget() {
                     if (v.hasData) {
                         Image(
                             ImageProvider(
-                                WidgetBitmaps.ring(v.status.today, model.now.minutes, (side * density).toInt(), WidgetPalette.minimal(ctx, isNight(ctx)), density, stroke = side / 13f),
+                                WidgetBitmaps.ring(v.status.today, model.now.minutes, ringPx, WidgetPalette.minimal(ctx, isNight(ctx)), ringPx / side, stroke = side / 13f),
                             ),
                             contentDescription = KolyText.describeSegments(ctx, v.status.today),
                             modifier = GlanceModifier.size(side.dp),
