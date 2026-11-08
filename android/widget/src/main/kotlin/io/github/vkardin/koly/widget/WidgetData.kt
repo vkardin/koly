@@ -38,9 +38,9 @@ object WidgetPlaces {
             }
         }
 
-    fun theme(context: Context, appWidgetId: Int): WidgetTheme =
+    fun theme(context: Context, appWidgetId: Int): WidgetTheme? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("theme_$appWidgetId", null)
-            ?.let { v -> WidgetTheme.entries.firstOrNull { it.name == v } } ?: WidgetTheme.DARK
+            ?.let { v -> WidgetTheme.entries.firstOrNull { it.name == v } }
 
     fun setTheme(context: Context, appWidgetId: Int, theme: WidgetTheme) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putString("theme_$appWidgetId", theme.name) }
@@ -69,6 +69,11 @@ suspend fun loadWidgetModel(context: Context, appWidgetId: Int?): WidgetModel {
     val views = settings.places.map { buildPlaceView(it, snapshot, now, lang) }
     val wanted = appWidgetId?.let { WidgetPlaces.get(context, it) }
     val chosen = views.firstOrNull { it.place.id == wanted } ?: views.firstOrNull { it.place.id == settings.mainPlace?.id }
-    val theme = appWidgetId?.let { WidgetPlaces.theme(context, it) } ?: WidgetTheme.DARK
+    // A theme chosen for this widget wins; otherwise the one from the app settings.
+    val theme = appWidgetId?.let { WidgetPlaces.theme(context, it) } ?: when (settings.widgetTheme) {
+        io.github.vkardin.koly.core.model.ThemeMode.DARK -> WidgetTheme.DARK
+        io.github.vkardin.koly.core.model.ThemeMode.LIGHT -> WidgetTheme.LIGHT
+        io.github.vkardin.koly.core.model.ThemeMode.SYSTEM -> WidgetTheme.SYSTEM
+    }
     return WidgetModel(now, views, chosen, snapshot.checkedAt, snapshot.offline, theme)
 }

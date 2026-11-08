@@ -41,6 +41,8 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setDynamicColor(enabled: Boolean) = store.edit { it[DYNAMIC_COLOR] = enabled }
 
+    suspend fun setWidgetTheme(mode: ThemeMode) = store.edit { it[WIDGET_THEME] = mode.name }
+
     suspend fun updateNotify(transform: (NotifySettings) -> NotifySettings) = store.edit { prefs ->
         val n = transform(readNotify(prefs))
         prefs[N_BEFORE_OFF] = n.beforeOff
@@ -96,6 +98,7 @@ class SettingsRepository @Inject constructor(
         homeView = enumOr(prefs[HOME_VIEW], HomeView.CARD),
         theme = enumOr(prefs[THEME], ThemeMode.SYSTEM),
         dynamicColor = prefs[DYNAMIC_COLOR] ?: false,
+        widgetTheme = enumOr(prefs[WIDGET_THEME], ThemeMode.DARK),
         places = readPlaces(prefs),
         mainPlaceId = prefs[MAIN_PLACE],
         notify = readNotify(prefs),
@@ -133,6 +136,7 @@ class SettingsRepository @Inject constructor(
         val HOME_VIEW = stringPreferencesKey("home_view")
         val THEME = stringPreferencesKey("theme")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+        val WIDGET_THEME = stringPreferencesKey("widget_theme")
         val PLACES = stringPreferencesKey("places")
         val MAIN_PLACE = stringPreferencesKey("main_place")
         val N_BEFORE_OFF = booleanPreferencesKey("notify_before_off")

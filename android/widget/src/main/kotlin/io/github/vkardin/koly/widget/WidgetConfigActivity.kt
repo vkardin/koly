@@ -59,7 +59,7 @@ class WidgetConfigActivity : ComponentActivity() {
             var settings by remember { mutableStateOf<AppSettings?>(null) }
             LaunchedEffect(Unit) { settings = ep.settings().current() }
             val scope = rememberCoroutineScope()
-            var theme by remember { mutableStateOf(WidgetPlaces.theme(this@WidgetConfigActivity, appWidgetId)) }
+            var theme by remember { mutableStateOf(WidgetPlaces.theme(this@WidgetConfigActivity, appWidgetId) ?: WidgetTheme.DARK) }
             val s = settings
             KolyTheme(mode = s?.theme ?: io.github.vkardin.koly.core.model.ThemeMode.SYSTEM) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {

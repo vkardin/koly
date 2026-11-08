@@ -36,6 +36,8 @@ data class AppSettings(
     val homeView: HomeView = HomeView.CARD,
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = false,
+    /** Colors of the home screen widgets; SYSTEM also means wallpaper colors for «Мінімал». */
+    val widgetTheme: ThemeMode = ThemeMode.DARK,
     val places: List<Place> = emptyList(),
     val mainPlaceId: String? = null,
     val notify: NotifySettings = NotifySettings(),

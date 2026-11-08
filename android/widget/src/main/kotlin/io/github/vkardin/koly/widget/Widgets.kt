@@ -461,6 +461,25 @@ class CardsLargeWidget : KolyWidget() {
 @Composable
 private fun themedColor(p: ColorProvider): Color = p.getColor(LocalContext.current)
 
+/** «Мінімал» colors: wallpaper colors when following the system, otherwise the chosen dark or light set. */
+private data class MinimalColors(val background: ColorProvider, val text: ColorProvider, val secondary: ColorProvider, val palette: WidgetPalette)
+
+@Composable
+private fun minimalColors(model: WidgetModel): MinimalColors {
+    val ctx = LocalContext.current
+    if (model.theme == WidgetTheme.SYSTEM) {
+        return MinimalColors(
+            GlanceTheme.colors.widgetBackground,
+            GlanceTheme.colors.onSurface,
+            GlanceTheme.colors.onSurfaceVariant,
+            WidgetPalette.minimal(ctx, isNight(ctx)),
+        )
+    }
+    val s = CardStyle.of(ctx, model.theme)
+    val bg = if (s == CardStyle.DARK) Color(0xFF1B2236) else Color(0xFFF7F8FB)
+    return MinimalColors(ColorProvider(bg), ColorProvider(s.text), ColorProvider(s.secondary), s.palette)
+}
+
 class RingWidget : KolyWidget() {
     @Composable
     override fun Content(model: WidgetModel) {
@@ -474,17 +493,18 @@ class RingWidget : KolyWidget() {
             val side = if (wide) h else minOf(w, h)
             // Ring bitmaps are capped in size: every size bucket carries its own copy.
             val ringPx = (side * ctx.resources.displayMetrics.density).toInt().coerceAtMost(420)
-            val onSurface = GlanceTheme.colors.onSurface
-            val variant = GlanceTheme.colors.onSurfaceVariant
+            val mc = minimalColors(model)
+            val onSurface = mc.text
+            val variant = mc.secondary
             val ring = @Composable {
                 Box(
-                    GlanceModifier.size(side.dp).background(GlanceTheme.colors.widgetBackground).cornerRadius((side / 2).dp),
+                    GlanceModifier.size(side.dp).background(mc.background).cornerRadius((side / 2).dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (v.hasData) {
                         Image(
                             ImageProvider(
-                                WidgetBitmaps.ring(v.status.today, model.now.minutes, ringPx, WidgetPalette.minimal(ctx, isNight(ctx)), ringPx / side, stroke = side / 13f),
+                                WidgetBitmaps.ring(v.status.today, model.now.minutes, ringPx, mc.palette, ringPx / side, stroke = side / 13f),
                             ),
                             contentDescription = KolyText.describeSegments(ctx, v.status.today),
                             modifier = GlanceModifier.size(side.dp),
@@ -506,7 +526,7 @@ class RingWidget : KolyWidget() {
                 Box(GlanceModifier.fillMaxSize().openOnClick(ctx), contentAlignment = Alignment.Center) { ring() }
             } else {
                 Row(
-                    GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).cornerRadius((h / 2).dp).openOnClick(ctx),
+                    GlanceModifier.fillMaxSize().background(mc.background).cornerRadius((h / 2).dp).openOnClick(ctx),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     ring()
@@ -553,10 +573,11 @@ class PillWidget : KolyWidget() {
             // A one-row pill only has room for the first line.
             val oneLine = h < 70
             val sc = if (oneLine) scaleFor(w, h, 250f, 48f, min = 0.7f, max = 1.2f) else scaleFor(w, h, 250f, 100f)
-            val onSurface = GlanceTheme.colors.onSurface
-            val variant = GlanceTheme.colors.onSurfaceVariant
+            val mc = minimalColors(model)
+            val onSurface = mc.text
+            val variant = mc.secondary
             Column(
-                GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground)
+                GlanceModifier.fillMaxSize().background(mc.background)
                     .cornerRadius(if (oneLine) (h / 2).dp else 28.dp)
                     .padding(horizontal = sc.dp(16f), vertical = sc.dp(6f)).openOnClick(ctx),
                 verticalAlignment = Alignment.CenterVertically,
@@ -572,7 +593,7 @@ class PillWidget : KolyWidget() {
                 if (!oneLine && v.hasData) {
                     (untilChangeText(ctx, v))?.let { Text(it, style = style(variant, sc.sp(12f)), maxLines = 1) }
                     Box(GlanceModifier.padding(top = sc.dp(6f))) {
-                        DayImage(v.status.today, model.now.minutes, w - 2 * sc.px(16f), sc.px(8f), WidgetPalette.minimal(ctx, isNight(ctx)))
+                        DayImage(v.status.today, model.now.minutes, w - 2 * sc.px(16f), sc.px(8f), mc.palette)
                     }
                 }
             }

@@ -105,6 +105,11 @@ class SettingsViewModel @Inject constructor(
     fun setTheme(t: ThemeMode) = viewModelScope.launch { settings.setTheme(t) }
     fun setDynamic(on: Boolean) = viewModelScope.launch { settings.setDynamicColor(on) }
 
+    fun setWidgetTheme(t: ThemeMode) = viewModelScope.launch {
+        settings.setWidgetTheme(t)
+        sync.refreshLocal()
+    }
+
     fun updateNotify(transform: (NotifySettings) -> NotifySettings) = viewModelScope.launch {
         settings.updateNotify(transform)
         sync.refreshLocal()
@@ -173,6 +178,14 @@ fun SettingsScreen(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 SwitchRow(R.string.dynamic_color, s.dynamicColor, viewModel::setDynamic, hint = R.string.dynamic_color_hint)
             }
+            Spacer(Modifier.height(16.dp))
+            Label(R.string.widget_theme)
+            ChipRow(
+                options = listOf(ThemeMode.DARK to R.string.widget_theme_dark, ThemeMode.LIGHT to R.string.widget_theme_light, ThemeMode.SYSTEM to R.string.widget_theme_system),
+                selected = s.widgetTheme,
+                onSelect = viewModel::setWidgetTheme,
+            )
+            Text(stringResource(R.string.widget_theme_hint), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
         }
 
         Section(R.string.sec_places) {
