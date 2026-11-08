@@ -60,10 +60,12 @@ data class WidgetModel(
     val theme: WidgetTheme = WidgetTheme.DARK,
 )
 
-suspend fun loadWidgetModel(context: Context, appWidgetId: Int?): WidgetModel {
-    val ep = EntryPointAccessors.fromApplication(context.applicationContext, WidgetEntryPoint::class.java)
-    val settings = ep.settings().current()
-    val snapshot = ep.schedules().current()
+private fun buildModel(
+    context: Context,
+    appWidgetId: Int?,
+    settings: io.github.vkardin.koly.core.model.AppSettings,
+    snapshot: io.github.vkardin.koly.core.data.DataSnapshot,
+): WidgetModel {
     val now = KyivNow.now()
     val lang = context.appLanguage()
     val views = settings.places.map { buildPlaceView(it, snapshot, now, lang) }
@@ -76,4 +78,27 @@ suspend fun loadWidgetModel(context: Context, appWidgetId: Int?): WidgetModel {
         io.github.vkardin.koly.core.model.ThemeMode.SYSTEM -> WidgetTheme.SYSTEM
     }
     return WidgetModel(now, views, chosen, snapshot.checkedAt, snapshot.offline, theme)
+}
+
+suspend fun loadWidgetModel(context: Context, appWidgetId: Int?): WidgetModel {
+    val ep = EntryPointAccessors.fromApplication(context.applicationContext, WidgetEntryPoint::class.java)
+    return buildModel(context, appWidgetId, ep.settings().current(), ep.schedules().current())
+}
+
+/**
+ * Live model for a running widget session: settings, data and the clock
+ * (each new minute) all trigger a new model, so the widget never shows stale state.
+ */
+fun widgetModelFlow(context: Context, appWidgetId: Int?): kotlinx.coroutines.flow.Flow<WidgetModel> {
+    val ep = EntryPointAccessors.fromApplication(context.applicationContext, WidgetEntryPoint::class.java)
+    val minutes = kotlinx.coroutines.flow.flow {
+        while (true) {
+            emit(Unit)
+            val now = System.currentTimeMillis()
+            kotlinx.coroutines.delay(60_000 - now % 60_000 + 300)
+        }
+    }
+    return kotlinx.coroutines.flow.combine(ep.settings().settings, ep.schedules().snapshot, minutes) { s, snap, _ ->
+        buildModel(context, appWidgetId, s, snap)
+    }
 }

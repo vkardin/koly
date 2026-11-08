@@ -4,6 +4,8 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -307,8 +309,12 @@ abstract class KolyWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(id) }.getOrNull()
-        val model = loadWidgetModel(context, appWidgetId)
-        provideContent { Content(model) }
+        val initial = loadWidgetModel(context, appWidgetId)
+        val updates = widgetModelFlow(context, appWidgetId)
+        provideContent {
+            val model by updates.collectAsState(initial)
+            Content(model)
+        }
     }
 
     @Composable
