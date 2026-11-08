@@ -7,7 +7,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -56,11 +59,23 @@ class WidgetConfigActivity : ComponentActivity() {
             var settings by remember { mutableStateOf<AppSettings?>(null) }
             LaunchedEffect(Unit) { settings = ep.settings().current() }
             val scope = rememberCoroutineScope()
+            var theme by remember { mutableStateOf(WidgetPlaces.theme(this@WidgetConfigActivity, appWidgetId)) }
             val s = settings
             KolyTheme(mode = s?.theme ?: io.github.vkardin.koly.core.model.ThemeMode.SYSTEM) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     Column(Modifier.safeDrawingPadding().padding(16.dp).verticalScroll(rememberScrollState())) {
                         Text(stringResource(UiR.string.widget_choose_place), style = MaterialTheme.typography.headlineSmall)
+                        Spacer(Modifier.height(12.dp))
+                        Text(stringResource(UiR.string.widget_theme), style = MaterialTheme.typography.titleSmall)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            for ((value, label) in listOf(
+                                WidgetTheme.DARK to UiR.string.widget_theme_dark,
+                                WidgetTheme.LIGHT to UiR.string.widget_theme_light,
+                                WidgetTheme.SYSTEM to UiR.string.widget_theme_system,
+                            )) {
+                                FilterChip(selected = theme == value, onClick = { theme = value }, label = { Text(stringResource(label)) })
+                            }
+                        }
                         Spacer(Modifier.height(16.dp))
                         if (s != null && s.places.isEmpty()) {
                             Text(stringResource(UiR.string.widget_no_places), style = MaterialTheme.typography.bodyLarge)
@@ -73,6 +88,7 @@ class WidgetConfigActivity : ComponentActivity() {
                             KolyCard(
                                 Modifier.heightIn(min = 56.dp).clickable(role = Role.Button) {
                                     WidgetPlaces.set(this@WidgetConfigActivity, appWidgetId, p.id)
+                                    WidgetPlaces.setTheme(this@WidgetConfigActivity, appWidgetId, theme)
                                     scope.launch {
                                         KolyWidgets.updateAll(applicationContext)
                                         setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))

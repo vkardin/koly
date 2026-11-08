@@ -238,4 +238,16 @@
     <string name="widget_preview_work">Робота</string>
     <string name="widget_preview_parents">Батьки</string>
     <string name="widget_preview_countdown" translatable="false">2:14</string>
+    <string name="w_until_off">до відключення %1$s</string>
+    <string name="w_until_on">до увімкнення %1$s</string>
+    <string name="w_until_maybe">до можливого відключення %1$s</string>
+    <string name="duration_hm">%1$d год %2$d хв</string>
+    <string name="duration_h">%1$d год</string>
+    <string name="duration_m">%1$d хв</string>
+    <string name="total_off">Загалом: %1$s</string>
+    <string name="maybe_short">можливо</string>
+    <string name="widget_theme">Тема віджета</string>
+    <string name="widget_theme_dark">Темна</string>
+    <string name="widget_theme_light">Світла</string>
+    <string name="widget_theme_system">Як у системі</string>
 </resources>

@@ -76,5 +76,8 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_text" />
         </receiver>
+        <receiver
+            android:name=".WidgetTickReceiver"
+            android:exported="false" />
     </application>
 </manifest>

@@ -31,8 +31,23 @@ object WidgetPlaces {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putString(appWidgetId.toString(), placeId) }
 
     fun remove(context: Context, appWidgetIds: IntArray) =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { appWidgetIds.forEach { remove(it.toString()) } }
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit {
+            appWidgetIds.forEach {
+                remove(it.toString())
+                remove("theme_$it")
+            }
+        }
+
+    fun theme(context: Context, appWidgetId: Int): WidgetTheme =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("theme_$appWidgetId", null)
+            ?.let { v -> WidgetTheme.entries.firstOrNull { it.name == v } } ?: WidgetTheme.DARK
+
+    fun setTheme(context: Context, appWidgetId: Int, theme: WidgetTheme) =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putString("theme_$appWidgetId", theme.name) }
 }
+
+/** Background of the "Картки" widgets, chosen when the widget is added. */
+enum class WidgetTheme { DARK, LIGHT, SYSTEM }
 
 data class WidgetModel(
     val now: KyivNow,
@@ -42,6 +57,7 @@ data class WidgetModel(
     /** Last successful check against the server, and whether the last attempt failed. */
     val checkedAt: java.time.Instant? = null,
     val offline: Boolean = false,
+    val theme: WidgetTheme = WidgetTheme.DARK,
 )
 
 suspend fun loadWidgetModel(context: Context, appWidgetId: Int?): WidgetModel {
@@ -53,5 +69,6 @@ suspend fun loadWidgetModel(context: Context, appWidgetId: Int?): WidgetModel {
     val views = settings.places.map { buildPlaceView(it, snapshot, now, lang) }
     val wanted = appWidgetId?.let { WidgetPlaces.get(context, it) }
     val chosen = views.firstOrNull { it.place.id == wanted } ?: views.firstOrNull { it.place.id == settings.mainPlace?.id }
-    return WidgetModel(now, views, chosen, snapshot.checkedAt, snapshot.offline)
+    val theme = appWidgetId?.let { WidgetPlaces.theme(context, it) } ?: WidgetTheme.DARK
+    return WidgetModel(now, views, chosen, snapshot.checkedAt, snapshot.offline, theme)
 }
