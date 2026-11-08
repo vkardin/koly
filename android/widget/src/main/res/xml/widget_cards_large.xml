@@ -15,5 +15,5 @@
     android:description="@string/widget_cards_description"
     android:initialLayout="@layout/glance_default_loading_layout"
     android:configure="io.github.vkardin.koly.widget.WidgetConfigActivity"
-    android:widgetFeatures="reconfigurable"
+    android:widgetFeatures="reconfigurable|configuration_optional"
      />
