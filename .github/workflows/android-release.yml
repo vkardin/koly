@@ -39,7 +39,7 @@ jobs:
           KOLY_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon :core:model:test :app:testReleaseUnitTest :app:assembleRelease :app:bundleRelease
+          ./gradlew --no-daemon :core:model:test :app:testDebugUnitTest :app:assembleRelease :app:bundleRelease
           mkdir -p ../dist
           cp app/build/outputs/apk/release/koly-$VERSION-release.apk ../dist/koly-$VERSION.apk
           cp app/build/outputs/bundle/release/koly-$VERSION-release.aab ../dist/koly-$VERSION.aab
