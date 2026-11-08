@@ -11,6 +11,14 @@ First release of the Android app.
 - Notifications before outages and before power returns, on schedule changes and when tomorrow is published.
 - Home screen widgets: Cards (one place, several places) and Minimal (ring, pill, text). One layout scaled to any size, outage list with durations and total, countdown refreshed every minute, a mark when data is out of date, dark, light or system theme.
 
+## desktop — unreleased
+
+- Ring and strip no longer show "power on" when there is no schedule for today.
+- Strip and ring show emergency, offline, outdated and demo warnings; ring gets refresh and settings buttons on hover, strip gets a settings button.
+- Countdowns show the time of the next change.
+- Settings: keyboard focus survives every change, arrow keys work in option groups, places can be reordered with Alt+Up/Down, removing a place can be undone.
+- Screen reader announcements for reordering, removal and update checks; reduced motion support.
+
 ## desktop 1.0.0 — 2026-11-07
 
 First stable release of the Windows widget.

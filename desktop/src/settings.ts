@@ -42,6 +42,37 @@ type UpdateState =
   | { kind: "error" };
 let updateState: UpdateState = { kind: "idle" };
 
+type UndoState = { label: string; places: Place[]; mainPlaceId: string | null };
+let undo: UndoState | null = null;
+let undoTimer: number | undefined;
+
+function setUndo(next: UndoState | null) {
+  undo = next;
+  clearTimeout(undoTimer);
+  if (next)
+    undoTimer = window.setTimeout(() => {
+      undo = null;
+      if (section === "places" && !busy()) render();
+    }, 8000);
+}
+
+function undoBar(): string {
+  if (!undo) return "";
+  return `<div class="undo-bar" role="status"><span>${esc(t("placeRemoved", { name: undo.label }))}</span>
+    <button class="btn ghost sm" data-action="undo">${esc(t("undo"))}</button></div>`;
+}
+
+const live = document.createElement("div");
+live.className = "sr-only";
+live.setAttribute("aria-live", "polite");
+document.body.append(live);
+
+/** Reads a short message to screen readers without moving focus. */
+function announce(text: string) {
+  live.textContent = "";
+  window.setTimeout(() => (live.textContent = text), 50);
+}
+
 async function update(patch: Partial<Settings>) {
   settings = { ...settings, ...patch };
   await saveSettings(settings);
@@ -76,11 +107,11 @@ function toggle(id: string, label: string, checked: boolean): string {
     <input type="checkbox" class="switch" data-field="${id}" ${checked ? "checked" : ""}/></label>`;
 }
 
-function segmented(id: string, options: Array<[string, string]>, value: string): string {
-  return `<div class="segmented" role="radiogroup">${options
+function segmented(id: string, title: string, options: Array<[string, string]>, value: string): string {
+  return `<span id="lbl-${id}">${esc(title)}</span><div class="segmented" role="radiogroup" aria-labelledby="lbl-${id}">${options
     .map(
       ([v, label]) =>
-        `<button role="radio" aria-checked="${v === value}" class="${v === value ? "active" : ""}" data-seg="${id}" data-value="${v}">${esc(label)}</button>`,
+        `<button role="radio" aria-checked="${v === value}" tabindex="${v === value ? 0 : -1}" class="${v === value ? "active" : ""}" data-seg="${id}" data-value="${v}">${esc(label)}</button>`,
     )
     .join("")}</div>`;
 }
@@ -101,11 +132,11 @@ function renderAppearance(): string {
   ];
   return `<h1>${esc(t("secAppearance"))}</h1>
   <section class="group">
-    <div class="group-title">${esc(t("widgetView"))}</div>
-    <div class="view-cards" role="radiogroup">
+    <div class="group-title" id="lbl-view">${esc(t("widgetView"))}</div>
+    <div class="view-cards" role="radiogroup" aria-labelledby="lbl-view">
       ${views
         .map(
-          ([v, k]) => `<button class="view-card ${settings.view === v ? "active" : ""}" role="radio" aria-checked="${settings.view === v}" data-seg="view" data-value="${v}">
+          ([v, k]) => `<button class="view-card ${settings.view === v ? "active" : ""}" role="radio" aria-checked="${settings.view === v}" tabindex="${settings.view === v ? 0 : -1}" data-seg="view" data-value="${v}">
           ${viewIcon(v)}<span>${esc(t(k))}</span></button>`,
         )
         .join("")}
@@ -113,8 +144,8 @@ function renderAppearance(): string {
     <p class="hint">${esc(t("viewHint"))}</p>
   </section>
   <section class="group">
-    <div class="row"><span>${esc(t("placement"))}</span>${segmented("windowMode", [["top", t("placementTop")], ["desktop", t("placementDesktop")]], settings.windowMode)}</div>
-    <div class="row"><span>${esc(t("theme"))}</span>${segmented("theme", [["system", t("themeSystem")], ["dark", t("themeDark")], ["light", t("themeLight")]], settings.theme)}</div>
+    <div class="row">${segmented("windowMode", t("placement"), [["top", t("placementTop")], ["desktop", t("placementDesktop")]], settings.windowMode)}</div>
+    <div class="row">${segmented("theme", t("theme"), [["system", t("themeSystem")], ["dark", t("themeDark")], ["light", t("themeLight")]], settings.theme)}</div>
     <label class="row"><span>${esc(t("opacity"))}</span><span class="range"><input type="range" min="40" max="100" step="5" value="${settings.opacity}" data-range="opacity"/><output>${settings.opacity}%</output></span></label>
     <label class="row"><span>${esc(t("scale"))}</span><span class="range"><input type="range" min="90" max="125" step="5" value="${settings.scale}" data-range="scale"/><output>${settings.scale}%</output></span></label>
     ${toggle("showTomorrow", t("showTomorrow"), settings.showTomorrow)}
@@ -151,7 +182,7 @@ function renderPlaces(): string {
     .map((p) => {
       if (editingId === p.id) return `<li class="place-item editing">${placeForm(p)}</li>`;
       const isMain = p.id === main?.id;
-      return `<li class="place-item" draggable="true" data-id="${esc(p.id)}">
+      return `<li class="place-item" draggable="true" data-id="${esc(p.id)}" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown">
         <span class="grip" title="${esc(t("dragHint"))}" aria-hidden="true">⋮⋮</span>
         <div class="place-info"><div class="place-name">${esc(p.label)} ${isMain ? `<span class="pill">${esc(t("main"))}</span>` : ""}</div>
           <div class="muted small">${esc(regionName(p.regionId))} · ${esc(t("group"))} ${esc(p.group)}</div></div>
@@ -162,7 +193,7 @@ function renderPlaces(): string {
     })
     .join("");
   const full = settings.places.length >= MAX_PLACES;
-  return `<h1>${esc(t("secPlaces"))} <span class="counter">${esc(t("placesCount", { n: settings.places.length, max: MAX_PLACES }))}</span></h1>
+  return `${undoBar()}<h1>${esc(t("secPlaces"))} <span class="counter">${esc(t("placesCount", { n: settings.places.length, max: MAX_PLACES }))}</span></h1>
   ${settings.places.length ? `<ul class="place-list">${list}</ul><p class="hint">${esc(t("dragHint"))}</p>` : ""}
   <section class="group">
     <div class="group-title">${esc(t("addPlace"))}</div>
@@ -181,8 +212,8 @@ function renderNotifications(): string {
     ${toggle("notify.sound", t("sound"), n.sound)}
   </section>
   <section class="group">
-    <div class="row"><span>${esc(t("leadTime"))}</span>${segmented("leadMinutes", [5, 10, 15, 30, 60].map((m) => [String(m), t("minutesShort", { n: m })]), String(n.leadMinutes))}</div>
-    <div class="row"><span>${esc(t("forPlaces"))}</span>${segmented("scope", [["main", t("forMain")], ["all", t("forAll")]], n.scope)}</div>
+    <div class="row">${segmented("leadMinutes", t("leadTime"), [5, 10, 15, 30, 60].map((m) => [String(m), t("minutesShort", { n: m })]), String(n.leadMinutes))}</div>
+    <div class="row">${segmented("scope", t("forPlaces"), [["main", t("forMain")], ["all", t("forAll")]], n.scope)}</div>
     ${toggle("notify.quietNight", t("quietNight"), n.quietNight)}
   </section>
   <button class="btn ghost" data-action="test-notification">${esc(t("testNotification"))}</button>`;
@@ -191,9 +222,10 @@ function renderNotifications(): string {
 function renderGeneral(): string {
   return `<h1>${esc(t("secGeneral"))}</h1>
   <section class="group">
-    <div class="row"><span>${esc(t("language"))}</span>${segmented("lang", LANGS.map((l) => [l.id, l.label]), settings.lang)}</div>
-    <div class="row"><span>${esc(t("refreshFreq"))}</span>${segmented(
+    <div class="row">${segmented("lang", t("language"), LANGS.map((l) => [l.id, l.label]), settings.lang)}</div>
+    <div class="row">${segmented(
       "refreshMinutes",
+      t("refreshFreq"),
       [
         ["5", t("minutesShort", { n: 5 })],
         ["10", t("minutesShort", { n: 10 })],
@@ -245,6 +277,8 @@ async function checkForUpdate() {
     updateState = { kind: "error" };
   }
   render();
+  const st = updateState as UpdateState;
+  announce(st.kind === "available" ? t("updateAvailable", { v: st.update.version }) : st.kind === "latest" ? t("upToDate") : t("updateError"));
 }
 
 async function installUpdate() {
@@ -290,9 +324,26 @@ const renderers: Record<Section, () => string> = {
   about: renderAbout,
 };
 
+/** A selector that finds the same control again after the page is re-rendered. */
+function focusSelector(el: HTMLElement | null): string | null {
+  if (!el || el === document.body || !app.contains(el)) return null;
+  const q = (attr: string, v: string | undefined) => (v != null ? `[${attr}="${CSS.escape(v)}"]` : "");
+  const form = el.closest<HTMLElement>("[data-form]");
+  const scope = form ? `[data-form="${CSS.escape(form.dataset.form!)}"] ` : "";
+  const name = el.getAttribute("name");
+  if (name) return `${scope}[name="${CSS.escape(name)}"]`;
+  const d = el.dataset;
+  if (d.section) return q("data-section", d.section);
+  if (d.seg) return q("data-seg", d.seg) + q("data-value", d.value);
+  if (d.field) return q("data-field", d.field);
+  if (d.range) return q("data-range", d.range);
+  if (d.action) return scope + q("data-action", d.action) + q("data-id", d.id);
+  if (d.link) return scope + q("data-link", d.link);
+  return ".content h1";
+}
+
 function render() {
-  const focused = document.activeElement as HTMLElement | null;
-  const focusKey = focused?.getAttribute("name") ?? focused?.dataset.range ?? null;
+  const sel = focusSelector(document.activeElement as HTMLElement | null);
   document.title = `${t("appName")} — ${t("traySettings")}`;
   app.innerHTML = `<nav class="side">
       <div class="side-brand">${logoMark(26)}<span>Коли <em>Є</em></span></div>
@@ -302,8 +353,12 @@ function render() {
           ${esc(t(s.key))}</button>`,
       ).join("")}
     </nav>
-    <main class="content">${renderers[section]()}</main>`;
-  if (focusKey) app.querySelector<HTMLElement>(`[name="${focusKey}"], [data-range="${focusKey}"]`)?.focus();
+    <main class="content">${renderers[section]().replace("<h1>", '<h1 tabindex="-1">')}</main>`;
+  if (sel) {
+    // A control that is gone (e.g. a removed place): keep focus in the page instead of dropping it to <body>.
+    const order = [sel, '[data-action="undo"]', ".content h1", ".nav-item.active"];
+    order.map((q) => app.querySelector<HTMLElement>(q)).find(Boolean)?.focus();
+  }
 }
 
 /** True while the user is in the middle of an input that a re-render would reset. */
@@ -353,9 +408,19 @@ function wire() {
         editingId = null;
         return render();
       case "remove": {
+        const removed = settings.places.find((p) => p.id === id);
+        if (!removed) return;
         const places = settings.places.filter((p) => p.id !== id);
         const mainPlaceId = settings.mainPlaceId === id ? (places[0]?.id ?? null) : settings.mainPlaceId;
+        setUndo({ label: removed.label, places: settings.places, mainPlaceId: settings.mainPlaceId });
+        announce(t("placeRemoved", { name: removed.label }));
         return update({ places, mainPlaceId });
+      }
+      case "undo": {
+        const u = undo;
+        if (!u) return;
+        setUndo(null);
+        return update({ places: u.places, mainPlaceId: u.mainPlaceId });
       }
       case "check-update":
         return checkForUpdate();
@@ -429,6 +494,33 @@ function wire() {
     } else {
       editingId = null;
       void update({ places: settings.places.map((p) => (p.id === target ? { ...p, label, regionId, group } : p)) });
+    }
+  });
+
+  app.addEventListener("keydown", (e) => {
+    const el = e.target as HTMLElement;
+    const radio = el.closest<HTMLElement>('[role="radio"]');
+    if (radio && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) {
+      const items = [...radio.parentElement!.querySelectorAll<HTMLElement>('[role="radio"]')];
+      const i = items.indexOf(radio);
+      const last = items.length - 1;
+      const back = e.key === "ArrowLeft" || e.key === "ArrowUp";
+      const next = e.key === "Home" ? 0 : e.key === "End" ? last : back ? (i === 0 ? last : i - 1) : i === last ? 0 : i + 1;
+      e.preventDefault();
+      items[next].focus();
+      items[next].click();
+      return;
+    }
+    const item = el.closest<HTMLElement>(".place-item[data-id]");
+    if (item && e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      e.preventDefault();
+      const places = [...settings.places];
+      const i = places.findIndex((p) => p.id === item.dataset.id);
+      const j = e.key === "ArrowUp" ? i - 1 : i + 1;
+      if (i < 0 || j < 0 || j >= places.length) return;
+      [places[i], places[j]] = [places[j], places[i]];
+      announce(t("movedTo", { name: places[j].label, n: j + 1, total: places.length }));
+      void update({ places });
     }
   });
 
