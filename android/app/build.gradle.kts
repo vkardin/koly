@@ -16,15 +16,30 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
     }
 
     androidResources {
         generateLocaleConfig = false
     }
 
+    // Release signing comes from the environment (CI secrets); without it the
+    // release build is signed with the debug key so it can be tried locally.
+    val keystore = System.getenv("KOLY_KEYSTORE_FILE")?.let(::file)?.takeIf { it.exists() }
+    signingConfigs {
+        if (keystore != null) {
+            create("release") {
+                storeFile = keystore
+                storePassword = System.getenv("KOLY_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KOLY_KEY_ALIAS")
+                keyPassword = System.getenv("KOLY_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             optimization {
                 enable = true
             }

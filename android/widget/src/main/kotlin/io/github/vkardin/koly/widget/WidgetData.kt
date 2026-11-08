@@ -71,8 +71,8 @@ private fun buildModel(
     val views = settings.places.map { buildPlaceView(it, snapshot, now, lang) }
     val wanted = appWidgetId?.let { WidgetPlaces.get(context, it) }
     val chosen = views.firstOrNull { it.place.id == wanted } ?: views.firstOrNull { it.place.id == settings.mainPlace?.id }
-    // A theme chosen for this widget wins; otherwise the one from the app settings.
-    val theme = appWidgetId?.let { WidgetPlaces.theme(context, it) } ?: when (settings.widgetTheme) {
+    // One theme for all widgets, set in the app.
+    val theme = when (settings.widgetTheme) {
         io.github.vkardin.koly.core.model.ThemeMode.DARK -> WidgetTheme.DARK
         io.github.vkardin.koly.core.model.ThemeMode.LIGHT -> WidgetTheme.LIGHT
         io.github.vkardin.koly.core.model.ThemeMode.SYSTEM -> WidgetTheme.SYSTEM

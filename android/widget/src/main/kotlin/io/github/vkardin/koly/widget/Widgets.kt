@@ -77,6 +77,7 @@ private data class CardStyle(
     val off: Color,
     val maybe: Color,
     val total: Color,
+    val warn: Color,
     val palette: WidgetPalette,
 ) {
     fun state(s: PowerState) = when (s) {
@@ -96,6 +97,7 @@ private data class CardStyle(
             off = Color(0xFFC9D0E4),
             maybe = Color(0xFFE0B860),
             total = Color(0xFFFFC24A),
+            warn = Color(0xFFFF8A65),
             palette = WidgetPalette.CARDS,
         )
         val LIGHT = CardStyle(
@@ -108,6 +110,7 @@ private data class CardStyle(
             off = Color(0xFF3A4463),
             maybe = Color(0xFF7A5200),
             total = Color(0xFF8A5A00),
+            warn = Color(0xFFB3261E),
             palette = WidgetPalette.CARDS.copy(off = 0xFF3A4463.toInt(), maybeBase = 0xFF3A4463.toInt(), maybeStripe = 0xFFD9A33A.toInt(), track = 0xFFE3E6EF.toInt(), marker = 0xFF141A2B.toInt()),
         )
 
@@ -188,6 +191,10 @@ private fun tomorrowText(context: Context, v: PlaceView): String = when {
     v.status.outagesTomorrow == 0 -> context.getString(UiR.string.tomorrow_no_outages)
     else -> context.resources.getQuantityString(UiR.plurals.tomorrow_outages, v.status.outagesTomorrow, v.status.outagesTomorrow)
 }
+
+/** Shown on every widget when the data may be out of date: "офлайн · оновлено 2 год тому". */
+private fun staleNote(context: Context, model: WidgetModel, v: PlaceView?): String? =
+    if (model.offline || v?.stale == true || (v == null && model.views.any { it.stale })) updatedText(context, model, v) else null
 
 private fun updatedText(context: Context, model: WidgetModel, v: PlaceView?): String {
     val parts = mutableListOf(context.getString(UiR.string.updated_ago, KolyText.ago(context, model.checkedAt, model.now.instant)))
@@ -352,6 +359,7 @@ private fun PlaceCard(model: WidgetModel) {
             Text(v.place.label, style = style(s.text, sc.sp(15f), true), maxLines = 1, modifier = GlanceModifier.defaultWeight())
             Badge(if (w >= 200) ctx.getString(UiR.string.group_value, v.place.group) else v.place.group, s, sc)
         }
+        staleNote(ctx, model, v)?.let { Text(it, style = style(s.warn, sc.sp(10f), true), maxLines = 1) }
         Row(GlanceModifier.fillMaxWidth().padding(top = sc.dp(6f)), verticalAlignment = Alignment.CenterVertically) {
             Column(GlanceModifier.defaultWeight()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -383,7 +391,7 @@ private fun PlaceCard(model: WidgetModel) {
             }
         }
         Spacer(GlanceModifier.defaultWeight())
-        if (h - fixed - todayCount * rowH > sc.px(60f)) {
+        if (staleNote(ctx, model, v) == null && h - fixed - todayCount * rowH > sc.px(60f)) {
             Text(updatedText(ctx, model, v), style = style(s.secondary, sc.sp(10f)), maxLines = 1)
         }
     }
@@ -420,7 +428,8 @@ class CardsLargeWidget : KolyWidget() {
         Column(GlanceModifier.fillMaxSize().background(ImageProvider(s.background)).padding(pad.dp).openOnClick(ctx)) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(ctx.getString(UiR.string.app_name), style = style(s.total, sc.sp(14f), true), modifier = GlanceModifier.defaultWeight())
-                Text(updatedText(ctx, model, null), style = style(s.secondary, sc.sp(10f)), maxLines = 1)
+                val note = staleNote(ctx, model, null)
+                Text(note ?: updatedText(ctx, model, null), style = style(if (note != null) s.warn else s.secondary, sc.sp(10f), note != null), maxLines = 1)
             }
             for (v in model.views.take(places)) {
                 Column(GlanceModifier.fillMaxWidth().padding(top = sc.dp(6f))) {
@@ -524,7 +533,11 @@ class RingWidget : KolyWidget() {
                         } else {
                             Text(stateText(ctx, v), style = style(onSurface, 12.sp), maxLines = 2)
                         }
-                        if (!wide) untilText(ctx, v)?.let { Text(it, style = style(variant, 11.sp)) }
+                        if (!wide) {
+                            val stale = staleNote(ctx, model, v) != null
+                            val line = if (stale) ctx.getString(if (model.offline) UiR.string.offline else UiR.string.data_stale) else untilText(ctx, v)
+                            line?.let { Text(it, style = if (stale) style(Color(0xFFFF8A65), 11.sp, true) else style(variant, 11.sp), maxLines = 1) }
+                        }
                     }
                 }
             }
@@ -546,6 +559,7 @@ class RingWidget : KolyWidget() {
                             Text(stateText(ctx, v), style = style(onSurface, 15.sp, true), maxLines = 1)
                         }
                         untilChangeText(ctx, v)?.let { Text(it, style = style(onSurface, 12.sp), maxLines = 1) }
+                        staleNote(ctx, model, v)?.let { Text(it, style = style(Color(0xFFFF8A65), 11.sp, true), maxLines = 1) }
                         if (v.hasData && h >= 130) {
                             val outages = v.status.today.filter { it.state != PowerState.ON && it.end > model.now.minutes }
                             for (o in outages.take(if (h >= 180) 3 else 1)) {
@@ -597,7 +611,8 @@ class PillWidget : KolyWidget() {
                     shortCountdown(v)?.let { Text(it, style = style(onSurface, sc.sp(18f), true)) }
                 }
                 if (!oneLine && v.hasData) {
-                    (untilChangeText(ctx, v))?.let { Text(it, style = style(variant, sc.sp(12f)), maxLines = 1) }
+                    val note = staleNote(ctx, model, v)
+                    (note ?: untilChangeText(ctx, v))?.let { Text(it, style = style(if (note != null) ColorProvider(Color(0xFFFF8A65)) else variant, sc.sp(12f)), maxLines = 1) }
                     Box(GlanceModifier.padding(top = sc.dp(6f))) {
                         DayImage(v.status.today, model.now.minutes, w - 2 * sc.px(16f), sc.px(8f), mc.palette)
                     }
@@ -635,6 +650,7 @@ class TextWidget : KolyWidget() {
                     style = style(soft, sc.sp(12f)),
                     maxLines = 1,
                 )
+                staleNote(ctx, model, v)?.let { Text(it, style = style(Color(0xFFFFB199), sc.sp(11f), true), maxLines = 1) }
                 if (v.hasData && rows > 0) {
                     for (o in outages.take(rows)) {
                         Text(

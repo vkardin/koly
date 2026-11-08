@@ -240,5 +240,5 @@
     <string name="widget_preview_3h30">3 ч 30 мин</string>
     <string name="widget_preview_2h">2 ч</string>
     <string name="widget_preview_total">Всего: 8 ч 30 мин</string>
-    <string name="widget_theme_hint">Тёмная и светлая — одинаково для всех виджетов; «Как в системе» для «Минимал» берёт цвета обоев. Тему отдельного виджета можно изменить долгим нажатием → «Настроить».</string>
+    <string name="widget_theme_hint">Одна тема для всех виджетов. «Как в системе» переключает светлую и тёмную вместе с телефоном, а «Минимал» берёт цвета обоев.</string>
 </resources>

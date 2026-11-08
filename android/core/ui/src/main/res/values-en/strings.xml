@@ -236,5 +236,5 @@
     <string name="widget_preview_3h30">3 h 30 min</string>
     <string name="widget_preview_2h">2 h</string>
     <string name="widget_preview_total">Total: 8 h 30 min</string>
-    <string name="widget_theme_hint">Dark and light apply to every widget; “Same as system” also gives Minimal widgets your wallpaper colors. To change one widget, long-press it → Settings.</string>
+    <string name="widget_theme_hint">One theme for all widgets. “Same as system” follows the phone’s light and dark mode, and Minimal widgets take your wallpaper colors.</string>
 </resources>

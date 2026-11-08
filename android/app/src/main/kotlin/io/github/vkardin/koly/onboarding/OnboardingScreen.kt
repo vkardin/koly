@@ -38,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -150,6 +151,11 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
                 ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED,
         )
     }
+    var exactAllowed by remember { mutableStateOf(io.github.vkardin.koly.feature.settings.canScheduleExact(ctx)) }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        exactAllowed = io.github.vkardin.koly.feature.settings.canScheduleExact(ctx)
+        onPauseOrDispose { }
+    }
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         notifyGranted = granted
         notifyAsked = true
@@ -178,6 +184,9 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                     when (current) {
                         0 -> {
+                            Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
+                                io.github.vkardin.koly.core.ui.LogoMark(size = 96.dp)
+                            }
                             Wordmark()
                             Spacer(Modifier.height(8.dp))
                             Text(stringResource(R.string.onb_welcome), style = MaterialTheme.typography.bodyLarge, color = c.textSecondary)
@@ -232,6 +241,18 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = hiltViewModel()) {
                                     Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                     Spacer(Modifier.width(8.dp))
                                     Text(stringResource(R.string.onb_notify_granted), style = MaterialTheme.typography.titleMedium)
+                                }
+                                if (!exactAllowed) {
+                                    Spacer(Modifier.height(16.dp))
+                                    Text(stringResource(R.string.exact_alarms_hint), style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+                                    Spacer(Modifier.height(8.dp))
+                                    OutlinedButton(onClick = {
+                                        val intent = android.content.Intent(
+                                            android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                                            android.net.Uri.parse("package:${ctx.packageName}"),
+                                        )
+                                        runCatching { ctx.startActivity(intent) }
+                                    }) { Text(stringResource(R.string.exact_alarms)) }
                                 }
                             } else {
                                 Button(onClick = { permission.launch(Manifest.permission.POST_NOTIFICATIONS) }) {

@@ -193,8 +193,13 @@ class SyncManager @Inject constructor(
             am.cancel(pi)
             return
         }
-        val at = next.toEpochMilli()
         val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || am.canScheduleExactAlarms()
+        // An inexact alarm may fire up to ~75% of its delay late. Aim earlier so the
+        // latest delivery lands on the target; on wake-up the next alarm aims again,
+        // closing in on the target with a shrinking window.
+        val nowMs = System.currentTimeMillis()
+        val target = next.toEpochMilli()
+        val at = if (exact || target - nowMs < 3 * 60_000) target else (target + 0.75 * nowMs).div(1.75).toLong()
         try {
             if (exact) {
                 am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
