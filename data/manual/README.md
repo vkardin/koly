@@ -31,10 +31,23 @@ a schedule can be entered by hand. Create `<region_id>.json` here, for example
   without hours) and the file still has a day from today on. A real schedule from the source
   always wins.
 
+## From the DTEK page with one click
+
+DTEK sites are often behind bot protection, but they open fine in a normal browser.
+
+1. Once: run `python tools/build_bookmarklet.py`, create a bookmark and paste the printed
+   `javascript:...` line as its address. Name it "Koly".
+2. Open the DTEK shutdowns page (for example https://www.dtek-dnem.com.ua/ua/shutdowns) and click the bookmark.
+   It copies the schedule and opens `manual/<region>.json` for editing on GitHub.
+3. Press Ctrl+A, Ctrl+V and "Commit changes".
+
+When a region is in emergency mode without hours, the data workflow opens a
+`data-alert` issue "Schedule needs a manual update" (GitHub sends an email), and again
+in the evening when tomorrow is missing from the file. It closes itself when the file is updated.
+
 ## From a saved DTEK page
 
-DTEK sites are often behind bot protection, but they open fine in a normal browser. Open the
-shutdowns page, save it with Ctrl+S ("Webpage, HTML only") and run from `data/`:
+Open the shutdowns page, save it with Ctrl+S ("Webpage, HTML only") and run from `data/`:
 
 ```sh
 python tools/manual_from_dtek.py page.html dnipropetrovsk
