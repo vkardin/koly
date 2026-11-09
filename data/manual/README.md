@@ -30,6 +30,7 @@ a schedule can be entered by hand. Create `<region_id>.json` here, for example
   source has no schedule (it fails, says schedules do not apply, or reports emergency outages
   without hours) and the file still has a day from today on. A real schedule from the source
   always wins.
+- The file is validated on every run; an invalid file never replaces published data.
 
 ## From the DTEK page with one click
 
@@ -54,4 +55,3 @@ python tools/manual_from_dtek.py page.html dnipropetrovsk
 ```
 
 This writes `manual/dnipropetrovsk.json` with every day the page has. Commit and push it.
-- The file is validated on every run; an invalid file never replaces published data.
