@@ -1,7 +1,8 @@
 """Opens, updates and closes GitHub issues when published data needs attention.
 
 Usage (in the data workflow):
-    python monitor.py --site ../site            after a run: stale regions
+    python monitor.py --site ../site            after a run: stale regions and
+                                                regions that need a manual schedule
     python monitor.py --workflow-failed URL     when the workflow failed
 
 Needs GITHUB_TOKEN and GITHUB_REPOSITORY. Without them it only prints the report.
@@ -28,6 +29,10 @@ STALE_AFTER = timedelta(hours=int(os.environ.get("KOLY_STALE_ALERT_HOURS", "6"))
 LABEL = "data-alert"
 STALE_TITLE = "Data sources need attention"
 FAILED_TITLE = "Data workflow is failing"
+MANUAL_TITLE = "Schedule needs a manual update"
+MANUAL_DIR = Path(__file__).resolve().parent / "manual"
+# DTEK usually publishes tomorrow in the evening; remind after this hour (Kyiv time).
+TOMORROW_REMINDER_HOUR = int(os.environ.get("KOLY_TOMORROW_REMINDER_HOUR", "20"))
 MARKER = "<!-- koly-monitor:{key} -->"
 
 
@@ -46,6 +51,37 @@ def stale_regions(site: Path, now: datetime, stale_after: timedelta = STALE_AFTE
             lines.append(
                 f"- **{region.id}** ({region.provider}): last successful fetch "
                 f"{region.fetchedAt}. Source: {region.sourceUrl}"
+            )
+    return lines
+
+
+def manual_reminders(site: Path, now: datetime, manual_dir: Path = MANUAL_DIR) -> list[str]:
+    """Lines for emergency-mode regions whose hours must be entered by hand.
+
+    The source gives emergency outages without hours (YASNO for Dnipro), so the apps
+    show no hours until `manual/<region>.json` is updated from the DTEK site.
+    """
+    lines = []
+    today = now.date()
+    tomorrow = (today + timedelta(days=1)).isoformat()
+    for path in sorted((site / "v1" / "regions").glob("*.json")):
+        try:
+            region = RegionFile.model_validate_json(path.read_text(encoding="utf-8"))
+        except ValueError:
+            continue
+        if not region.emergency.active:
+            continue
+        day = next((d for d in region.days if d.date == today.isoformat()), None)
+        manual = manual_dir / f"{region.id}.json"
+        if region.status == "no_schedules" or day is None or not any(day.groups.values()):
+            lines.append(
+                f"- **{region.id}**: emergency mode and no hours for today. "
+                f"Copy the schedule from {region.sourceUrl} into `data/manual/{region.id}.json`."
+            )
+        elif manual.exists() and now.hour >= TOMORROW_REMINDER_HOUR and tomorrow not in manual.read_text(encoding="utf-8"):
+            lines.append(
+                f"- **{region.id}**: emergency mode and `data/manual/{region.id}.json` has no schedule for "
+                f"{tomorrow}. Copy it from {region.sourceUrl} once DTEK publishes it."
             )
     return lines
 
@@ -116,6 +152,21 @@ def main(argv: list[str] | None = None) -> int:
     lines = stale_regions(args.site, now_kyiv())
     if issues:
         issues.close("workflow", "The data workflow succeeded again.")
+    reminders = manual_reminders(args.site, now_kyiv())
+    if reminders:
+        body = (
+            "The source reports emergency outages without hours, so the apps show no schedule "
+            "for these regions until it is entered by hand.\n\n"
+            + "\n".join(reminders)
+            + "\n\nOpen the DTEK page in a browser, click the Koly bookmark and commit the file "
+            "(see `data/manual/README.md`). This issue closes itself when the schedule is in place."
+        )
+        print(body)
+        if issues:
+            issues.open_or_update("manual", MANUAL_TITLE, body)
+    elif issues:
+        issues.close("manual", "The schedule is in place.")
+
     if lines:
         body = (
             f"These regions could not be refreshed for more than {int(STALE_AFTER.total_seconds() // 3600)} hours. "

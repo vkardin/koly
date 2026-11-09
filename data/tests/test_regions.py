@@ -19,7 +19,7 @@ from providers import (
     zaporizhzhiaoblenergo,
     zhytomyroblenergo,
 )
-from providers.manual import ManualProvider, manual_providers
+from providers.manual import ManualFallback, ManualProvider, manual_providers
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TODAY = date(2026, 11, 7)
@@ -251,6 +251,68 @@ def test_manual_ignores_unknown_regions(tmp_path):
 def test_manual_never_shadows_automatic_provider():
     covered = [r for p in all_providers() for r in p.region_ids]
     assert len(covered) == len(set(covered))
+
+
+class _Auto:
+    id = "auto"
+    region_ids = ["dnipropetrovsk"]
+    source_url = "https://example.org/auto"
+    min_interval = None
+
+    def __init__(self, result):
+        self.result = result
+
+    def fetch(self):
+        if isinstance(self.result, Exception):
+            raise self.result
+        return [self.result]
+
+
+def _auto_schedule(intervals, emergency=False, no_schedules=False):
+    from common.models import DaySchedule, Emergency, RegionSchedule
+
+    return RegionSchedule(
+        region_id="dnipropetrovsk",
+        updated_at="2099-01-01T08:00:00+02:00",
+        days=[DaySchedule(date="2099-01-01", groups={"1.1": intervals})],
+        emergency=Emergency(active=emergency),
+        no_schedules=no_schedules,
+    )
+
+
+def _fallback(tmp_path, auto, day="2099-01-01"):
+    manual = {"dnipropetrovsk": ManualProvider(manual_file(tmp_path, region="dnipropetrovsk", day=day))}
+    return ManualFallback(_Auto(auto), manual)
+
+
+def test_manual_fallback_fills_emergency_without_hours(tmp_path):
+    [s] = _fallback(tmp_path, _auto_schedule([], emergency=True)).fetch()
+    assert s.emergency.active is True and s.no_schedules is False
+    assert [(i.from_, i.to) for i in s.days[0].groups["1.1"]] == [("08:00", "12:00")]
+
+
+def test_manual_fallback_fills_no_schedules_and_errors(tmp_path):
+    [s] = _fallback(tmp_path, _auto_schedule([], no_schedules=True)).fetch()
+    assert s.days[0].groups["1.1"]
+    [s] = _fallback(tmp_path, ProviderError("blocked")).fetch()
+    assert s.days[0].groups["1.1"]
+
+
+def test_manual_fallback_never_replaces_a_real_schedule(tmp_path):
+    from common.models import Interval
+
+    real = [Interval(**{"from": "00:00", "to": "04:00", "type": "off"})]
+    [s] = _fallback(tmp_path, _auto_schedule(real, emergency=True)).fetch()
+    assert [(i.from_, i.to) for i in s.days[0].groups["1.1"]] == [("00:00", "04:00")]
+    [s] = _fallback(tmp_path, _auto_schedule([])).fetch()
+    assert s.days[0].groups["1.1"] == []
+
+
+def test_manual_fallback_ignores_an_outdated_file(tmp_path):
+    [s] = _fallback(tmp_path, _auto_schedule([], emergency=True), day="2020-01-01").fetch()
+    assert s.days[0].groups["1.1"] == [] and s.emergency.active is True
+    with pytest.raises(ProviderError):
+        _fallback(tmp_path, ProviderError("blocked"), day="2020-01-01").fetch()
 
 
 # --- publishing details -------------------------------------------------------
