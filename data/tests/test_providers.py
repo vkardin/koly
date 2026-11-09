@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from common.http import ProviderError
-from common.models import RegionFile
+from common.models import DaySchedule, Interval, RegionFile, RegionSchedule
 from providers import PROVIDERS
 from providers import _dtek_site, _yasno
 from providers.dtek_dnem import DtekDnem
@@ -114,6 +114,48 @@ def test_yasno_emergency_flag():
     schedule = _yasno.parse(payload, "kyiv-city")
     assert schedule.emergency.active is True
     assert [d.date for d in schedule.days] == ["2026-03-29"]
+
+
+def test_yasno_emergency_without_slots_is_not_power_on():
+    # 2026-11-08 Dnipro: EmergencyShutdowns with empty slots used to publish "power all day".
+    payload = _yasno_payload(today_status="EmergencyShutdowns", tomorrow_status="EmergencyShutdowns")
+    for day in ("today", "tomorrow"):
+        payload["2.1"][day]["slots"] = []
+    schedule, gaps = _yasno.parse_with_gaps(payload, "dnipropetrovsk")
+    assert gaps == ["2026-03-29", "2026-03-30"]
+    assert schedule.no_schedules is True
+    assert schedule.emergency.active is True
+
+
+def test_yasno_emergency_gap_dropped_next_to_real_day():
+    payload = _yasno_payload(today_status="EmergencyShutdowns")
+    payload["2.1"]["today"]["slots"] = [{"start": 0, "end": 1440, "type": "NotPlanned"}]
+    schedule, gaps = _yasno.parse_with_gaps(payload, "dnipropetrovsk")
+    assert gaps == ["2026-03-29"]
+    assert [d.date for d in schedule.days] == ["2026-03-30"]
+    assert schedule.no_schedules is False
+
+
+def test_yasno_fill_from_site():
+    payload = _yasno_payload(today_status="EmergencyShutdowns", tomorrow_status="EmergencyShutdowns")
+    for day in ("today", "tomorrow"):
+        payload["2.1"][day]["slots"] = []
+    schedule, gaps = _yasno.parse_with_gaps(payload, "dnipropetrovsk")
+    site = RegionSchedule(
+        region_id="dnipropetrovsk",
+        updated_at="2026-03-29T13:00:00+03:00",
+        days=[DaySchedule(date="2026-03-29", groups={"2.1": [Interval(from_="21:00", to="24:00", type="off")]})],
+    )
+    filled = _yasno.fill_from_site(schedule, gaps, lambda: site)
+    assert filled.no_schedules is False
+    assert filled.emergency.active is True
+    assert [d.date for d in filled.days] == ["2026-03-29"]
+    assert filled.updated_at == "2026-03-29T13:00:00+03:00"
+
+    def blocked():
+        raise ProviderError("behind a bot challenge")
+
+    assert _yasno.fill_from_site(schedule, gaps, blocked) is schedule
 
 
 def test_yasno_nothing_published_is_an_error():
