@@ -12,7 +12,7 @@ from .dtek_kem import DtekKem
 from .dtek_oem import DtekOem
 from .khmelnytskoblenergo import Khmelnytskoblenergo
 from .lvivoblenergo import Lvivoblenergo
-from .manual import manual_providers
+from .manual import ManualFallback, manual_providers
 from .mykolaivoblenergo import Mykolaivoblenergo
 from .rivneoblenergo import Rivneoblenergo
 from .zaporizhzhiaoblenergo import Zaporizhzhiaoblenergo
@@ -42,9 +42,17 @@ AUTOMATIC: list[Provider] = [
 
 
 def all_providers() -> list[Provider]:
-    """Automatic providers plus manual files for regions no automatic provider covers."""
+    """Automatic providers plus manual files.
+
+    A manual file for a region no automatic provider covers is a provider of its own;
+    for a covered region it is a fallback for when the source has no schedule.
+    """
     covered = {r for p in AUTOMATIC for r in p.region_ids}
-    return AUTOMATIC + [m for m in manual_providers() if m.region_ids[0] not in covered]
+    manual = {m.region_ids[0]: m for m in manual_providers()}
+    automatic = [
+        ManualFallback(p, manual) if any(r in manual for r in p.region_ids) else p for p in AUTOMATIC
+    ]
+    return automatic + [m for r, m in manual.items() if r not in covered]
 
 
 PROVIDERS = AUTOMATIC
