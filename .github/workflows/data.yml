@@ -44,6 +44,9 @@ jobs:
         working-directory: data
         run: python run.py --site ../site
 
+      - name: Copy website
+        run: cp -r web/. site/
+
       - name: Publish if changed
         working-directory: site
         run: |
