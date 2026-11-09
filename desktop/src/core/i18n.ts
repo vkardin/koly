@@ -132,6 +132,13 @@ const uk = {
   installing: "Завантажую оновлення… {p}",
   updateError: "Не вдалося перевірити оновлення",
   releasesPage: "Сторінка релізів",
+  durationHm: "{h} год {m} хв",
+  durationM: "{m} хв",
+  hideWidget: "Сховати віджет",
+  refreshing: "Оновлюю…",
+  testSent: "Сповіщення надіслано. Якщо його не видно, перевірте «Не турбувати» у Windows.",
+  notifyBlocked: "Windows не дозволяє сповіщення для «Коли Є». Увімкніть їх у Параметри → Система → Сповіщення.",
+  leadNeedsToggle: "Увімкніть сповіщення перед відключенням або поверненням світла, щоб вибрати час.",
 };
 
 export type StringKey = keyof typeof uk;
@@ -269,6 +276,13 @@ const en: Dict = {
   installing: "Downloading update… {p}",
   updateError: "Could not check for updates",
   releasesPage: "Releases page",
+  durationHm: "{h} h {m} min",
+  durationM: "{m} min",
+  hideWidget: "Hide widget",
+  refreshing: "Refreshing…",
+  testSent: "Notification sent. If you don’t see it, check Do not disturb in Windows.",
+  notifyBlocked: "Windows blocks notifications for Koly Ye. Turn them on in Settings → System → Notifications.",
+  leadNeedsToggle: "Turn on notifications before an outage or before power returns to choose the time.",
 };
 
 const ru: Dict = {
@@ -403,6 +417,13 @@ const ru: Dict = {
   installing: "Загружаю обновление… {p}",
   updateError: "Не удалось проверить обновления",
   releasesPage: "Страница релизов",
+  durationHm: "{h} ч {m} мин",
+  durationM: "{m} мин",
+  hideWidget: "Скрыть виджет",
+  refreshing: "Обновляю…",
+  testSent: "Уведомление отправлено. Если его не видно, проверьте «Не беспокоить» в Windows.",
+  notifyBlocked: "Windows не разрешает уведомления для «Коли Є». Включите их в Параметры → Система → Уведомления.",
+  leadNeedsToggle: "Включите уведомления перед отключением или возвращением света, чтобы выбрать время.",
 };
 
 const dicts: Record<Lang, Dict> = { uk, en, ru };
@@ -435,6 +456,14 @@ export function agoText(ts: number | null, nowMs = Date.now()): string {
   if (min < 1) return t("justNow");
   if (min < 60) return t("minAgo", { n: min });
   return t("hoursAgo", { n: Math.floor(min / 60) });
+}
+
+/** Spoken form of a countdown: "2 год 14 хв" instead of "2:14". */
+export function durationText(minutes: number): string {
+  const total = Math.max(0, Math.ceil(minutes - 1e-6));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return h ? t("durationHm", { h, m }) : t("durationM", { m });
 }
 
 /** Localized tray labels passed to the native side. */

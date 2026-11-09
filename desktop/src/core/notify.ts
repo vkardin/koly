@@ -47,8 +47,11 @@ async function show(s: Settings, title: string, body: string) {
   sendNotification({ title, body, sound: s.notify.sound ? "Default" : undefined });
 }
 
-export async function sendTest(s: Settings) {
-  await show(s, t("nTestTitle"), t("nTestBody"));
+/** Returns false when Windows blocks notifications for the app. */
+export async function sendTest(s: Settings): Promise<boolean> {
+  if (!(await permitted())) return false;
+  sendNotification({ title: t("nTestTitle"), body: t("nTestBody"), sound: s.notify.sound ? "Default" : undefined });
+  return true;
 }
 
 function placesInScope(s: Settings): Place[] {

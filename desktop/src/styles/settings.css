@@ -254,7 +254,7 @@ h1 {
 .segmented button:focus-visible,
 .nav-item:focus-visible,
 .view-card:focus-visible {
-  outline: 2px solid var(--amber);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -275,7 +275,7 @@ h1 {
 }
 
 .btn.danger {
-  color: #e5675a;
+  color: var(--danger);
 }
 
 .place-list {
@@ -361,7 +361,7 @@ h1 {
 
 .field input:focus,
 .field select:focus {
-  outline: 2px solid var(--amber);
+  outline: 2px solid var(--focus);
   outline-offset: 0;
 }
 
@@ -448,4 +448,22 @@ h1 {
     transition: none !important;
     animation: none !important;
   }
+}
+
+.row-disabled > span:first-child,
+.row-disabled .segmented {
+  opacity: 0.55;
+}
+
+.segmented button:disabled {
+  cursor: not-allowed;
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.test-result {
+  margin: 0.75rem 0 0;
 }

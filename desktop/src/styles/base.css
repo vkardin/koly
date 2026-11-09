@@ -18,11 +18,14 @@
   --off-text: #c9d0e4;
   --maybe-a: #8a6a2b;
   --maybe-b: #2a3350;
+  --maybe-text: #d9a441;
+  --danger: #e5675a;
   --line: rgba(255, 255, 255, 0.08);
   --track: #232b42;
   --warn: #ffb35c;
   --accent-btn: #ffc24a;
   --accent-btn-text: #141a2b;
+  --focus: #ffc24a;
   color-scheme: dark;
 }
 
@@ -39,11 +42,14 @@
   --off-text: #3a4463;
   --maybe-a: #d9a441;
   --maybe-b: #3a4463;
+  --maybe-text: #7a5a14;
+  --danger: #b3372b;
   --line: rgba(20, 26, 43, 0.1);
   --track: #e3e6ef;
   --warn: #a8530a;
   --accent-btn: #ffc24a;
   --accent-btn-text: #141a2b;
+  --focus: #8a5a00;
   color-scheme: light;
 }
 
@@ -115,7 +121,7 @@ button {
 }
 
 .state-maybe {
-  color: var(--maybe-a);
+  color: var(--maybe-text);
 }
 
 .state-none {
@@ -298,7 +304,7 @@ button {
 
 .btn:focus-visible,
 .icon-btn:focus-visible {
-  outline: 2px solid var(--amber);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 

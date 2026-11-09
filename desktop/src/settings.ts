@@ -73,6 +73,10 @@ function announce(text: string) {
   window.setTimeout(() => (live.textContent = text), 50);
 }
 
+let refreshingData = false;
+let refreshGuard: number | undefined;
+let testResult: string | null = null;
+
 async function update(patch: Partial<Settings>) {
   settings = { ...settings, ...patch };
   await saveSettings(settings);
@@ -107,11 +111,11 @@ function toggle(id: string, label: string, checked: boolean): string {
     <input type="checkbox" class="switch" data-field="${id}" ${checked ? "checked" : ""}/></label>`;
 }
 
-function segmented(id: string, title: string, options: Array<[string, string]>, value: string): string {
-  return `<span id="lbl-${id}">${esc(title)}</span><div class="segmented" role="radiogroup" aria-labelledby="lbl-${id}">${options
+function segmented(id: string, title: string, options: Array<[string, string]>, value: string, disabled = false): string {
+  return `<span id="lbl-${id}">${esc(title)}</span><div class="segmented" role="radiogroup" aria-labelledby="lbl-${id}"${disabled ? ' aria-disabled="true"' : ""}>${options
     .map(
       ([v, label]) =>
-        `<button role="radio" aria-checked="${v === value}" tabindex="${v === value ? 0 : -1}" class="${v === value ? "active" : ""}" data-seg="${id}" data-value="${v}">${esc(label)}</button>`,
+        `<button role="radio" aria-checked="${v === value}" tabindex="${v === value ? 0 : -1}" class="${v === value ? "active" : ""}" data-seg="${id}" data-value="${v}"${disabled ? " disabled" : ""}>${esc(label)}</button>`,
     )
     .join("")}</div>`;
 }
@@ -203,6 +207,7 @@ function renderPlaces(): string {
 
 function renderNotifications(): string {
   const n = settings.notify;
+  const leadOff = !n.beforeOff && !n.beforeOn;
   return `<h1>${esc(t("secNotifications"))}</h1>
   <section class="group">
     ${toggle("notify.beforeOff", t("beforeOff"), n.beforeOff)}
@@ -212,11 +217,13 @@ function renderNotifications(): string {
     ${toggle("notify.sound", t("sound"), n.sound)}
   </section>
   <section class="group">
-    <div class="row">${segmented("leadMinutes", t("leadTime"), [5, 10, 15, 30, 60].map((m) => [String(m), t("minutesShort", { n: m })]), String(n.leadMinutes))}</div>
+    <div class="row${leadOff ? " row-disabled" : ""}">${segmented("leadMinutes", t("leadTime"), [5, 10, 15, 30, 60].map((m) => [String(m), t("minutesShort", { n: m })]), String(n.leadMinutes), leadOff)}</div>
+    ${leadOff ? `<p class="hint">${esc(t("leadNeedsToggle"))}</p>` : ""}
     <div class="row">${segmented("scope", t("forPlaces"), [["main", t("forMain")], ["all", t("forAll")]], n.scope)}</div>
     ${toggle("notify.quietNight", t("quietNight"), n.quietNight)}
   </section>
-  <button class="btn ghost" data-action="test-notification">${esc(t("testNotification"))}</button>`;
+  <button class="btn ghost" data-action="test-notification">${esc(t("testNotification"))}</button>
+  ${testResult ? `<p class="hint test-result" role="status">${esc(testResult)}</p>` : ""}`;
 }
 
 function renderGeneral(): string {
@@ -239,7 +246,7 @@ function renderGeneral(): string {
   </section>
   <section class="group">
     <div class="row"><span>${esc(t("dataUpdated", { ago: agoText(data.checkedAt) }))}${data.demo ? ` <span class="badge">${esc(t("demo"))}</span>` : ""}</span>
-      <button class="btn" data-action="refresh">${esc(t("refreshNow"))}</button></div>
+      <button class="btn" data-action="refresh"${refreshingData ? " disabled" : ""}>${esc(refreshingData ? t("refreshing") : t("refreshNow"))}</button></div>
     ${data.demo ? `<p class="hint">${esc(t("demoLong"))}</p>` : ""}
   </section>
   <button class="btn ghost danger" data-action="reset">${esc(t("resetAll"))}</button>`;
@@ -379,6 +386,7 @@ function wire() {
     if (nav) {
       section = nav.dataset.section as Section;
       editingId = null;
+      testResult = null;
       return render();
     }
     const link = el.closest<HTMLElement>("[data-link]");
@@ -427,8 +435,17 @@ function wire() {
       case "install-update":
         return installUpdate();
       case "test-notification":
-        return sendTest(settings);
+        testResult = (await sendTest(settings)) ? t("testSent") : t("notifyBlocked");
+        return render();
       case "refresh":
+        refreshingData = true;
+        clearTimeout(refreshGuard);
+        // The widget answers with "data-updated"; don't leave the button stuck if it never does.
+        refreshGuard = window.setTimeout(() => {
+          refreshingData = false;
+          render();
+        }, 20_000);
+        render();
         return emit("refresh-request");
       case "reset":
         if (!confirm(t("resetConfirm"))) return;
@@ -573,6 +590,8 @@ async function main() {
   });
   await listen<DataState>("data-updated", (e) => {
     data = e.payload;
+    refreshingData = false;
+    clearTimeout(refreshGuard);
     if (!busy()) render();
   });
   onSystemThemeChange(() => {
