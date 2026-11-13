@@ -9,7 +9,7 @@
 <a href="https://github.com/vkardin/koly/releases"><img alt="Release" src="https://img.shields.io/github/v/release/vkardin/koly?include_prereleases&color=FFC24A&labelColor=0F1422"></a>
 <a href="https://github.com/vkardin/koly/actions/workflows/data.yml"><img alt="Data" src="https://github.com/vkardin/koly/actions/workflows/data.yml/badge.svg"></a>
 <a href="https://github.com/vkardin/koly/actions/workflows/data-tests.yml"><img alt="Tests" src="https://github.com/vkardin/koly/actions/workflows/data-tests.yml/badge.svg"></a>
-<img alt="Windows 10/11" src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-5B6B96">
+<img alt="Windows 10/11, Android 8+" src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20%7C%20Android%208%2B-5B6B96">
 <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
 </p>
 
@@ -20,8 +20,10 @@
 
 ## Скачать
 
-- **Виджет для Windows:** `koly-widget-<версия>-setup.exe` в [Releases](https://github.com/vkardin/koly/releases). Устанавливается для текущего пользователя, без прав администратора.
-- **Android:** в разработке, после версии 1.0.
+- **Виджет для Windows:** [koly-widget-1.0.0-setup.exe](https://github.com/vkardin/koly/releases/download/desktop-v1.0.0/koly-widget-1.0.0-setup.exe), Windows 10 и 11. Устанавливается для текущего пользователя, без прав администратора.
+- **Приложение для Android:** [koly-1.0.0.apk](https://github.com/vkardin/koly/releases/download/android-v1.0.0/koly-1.0.0.apk), Android 8.0 и новее. При первой установке Android попросит разрешить установку из браузера или файлового менеджера.
+
+Прошлые версии лежат в [Releases](https://github.com/vkardin/koly/releases).
 
 Установщик пока не подписан. Если SmartScreen предупреждает, нажмите **Подробнее → Выполнить в любом случае**.
 

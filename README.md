@@ -9,7 +9,7 @@ English · <a href="README.uk.md">Українська</a> · <a href="README.ru
 <a href="https://github.com/vkardin/koly/releases"><img alt="Release" src="https://img.shields.io/github/v/release/vkardin/koly?include_prereleases&color=FFC24A&labelColor=0F1422"></a>
 <a href="https://github.com/vkardin/koly/actions/workflows/data.yml"><img alt="Data" src="https://github.com/vkardin/koly/actions/workflows/data.yml/badge.svg"></a>
 <a href="https://github.com/vkardin/koly/actions/workflows/data-tests.yml"><img alt="Tests" src="https://github.com/vkardin/koly/actions/workflows/data-tests.yml/badge.svg"></a>
-<img alt="Windows 10/11" src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-5B6B96">
+<img alt="Windows 10/11, Android 8+" src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20%7C%20Android%208%2B-5B6B96">
 <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
 </p>
 
@@ -20,8 +20,10 @@ English · <a href="README.uk.md">Українська</a> · <a href="README.ru
 
 ## Download
 
-- **Windows widget:** `koly-widget-<version>-setup.exe` from [Releases](https://github.com/vkardin/koly/releases). Installs for the current user, no admin rights needed.
-- **Android:** in development, planned after 1.0.
+- **Windows widget:** [koly-widget-1.0.0-setup.exe](https://github.com/vkardin/koly/releases/download/desktop-v1.0.0/koly-widget-1.0.0-setup.exe), Windows 10 and 11. Installs for the current user, no admin rights needed.
+- **Android app:** [koly-1.0.0.apk](https://github.com/vkardin/koly/releases/download/android-v1.0.0/koly-1.0.0.apk), Android 8.0 and newer. The first time, Android asks you to allow installs from your browser or file manager.
+
+Older versions are in [Releases](https://github.com/vkardin/koly/releases).
 
 The installer is not code-signed yet. If SmartScreen warns you, click **More info → Run anyway**.
 

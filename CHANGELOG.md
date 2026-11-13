@@ -1,6 +1,6 @@
 # Changelog
 
-## android 1.0.0 — unreleased
+## android 1.0.0 — 2026-11-08
 
 First release of the Android app.
 
