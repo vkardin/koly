@@ -15,8 +15,8 @@ android {
         applicationId = "io.github.vkardin.koly"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
     }
 
     androidResources {
@@ -55,7 +55,16 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    // The power map is the same module the website uses (web/powermap.*), shipped as assets.
+    sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/mapAssets"))
 }
+
+val copyMapAssets = tasks.register<Copy>("copyMapAssets") {
+    from(rootProject.file("../web")) { include("powermap.js", "powermap.css", "ua-map.json") }
+    into(layout.buildDirectory.dir("generated/mapAssets/map"))
+}
+tasks.named("preBuild") { dependsOn(copyMapAssets) }
 
 base {
     archivesName.set("koly-${android.defaultConfig.versionName}")

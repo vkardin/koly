@@ -1,18 +1,14 @@
 # Changelog
 
-## android 1.0.0 — 2026-11-08
+## android 1.1.0 — 2026-11-16
 
-First release of the Android app.
+- Power map: a new Map tab with every region coloured by the share of groups with power right now. Pinch to zoom, drag to move, tap a region for its groups.
+- Eleven more regions: Kyiv region, Chernivtsi, Volyn, Zakarpattia, Ivano-Frankivsk, Kirovohrad, Poltava, Sumy, Ternopil, Kharkiv and Chernihiv.
 
-- Onboarding: language, region, group, home screen view, notifications with exact timing, disclaimer.
-- Home screen in three views: card and bar, day ring, all places as a list.
-- Up to 10 places, statistics for 7 days, settings, uk/en/ru.
-- Offline cache with conditional requests and periodic sync.
-- Notifications before outages and before power returns, on schedule changes and when tomorrow is published.
-- Home screen widgets: Cards (one place, several places) and Minimal (ring, pill, text). One layout scaled to any size, outage list with durations and total, countdown refreshed every minute, a mark when data is out of date, dark, light or system theme.
+## desktop 1.1.0 — 2026-11-16
 
-## desktop — unreleased
-
+- Power map: a new section in settings, also in the right-click menu and the tray. Every region is coloured by the share of groups with power right now; zoom with the wheel or buttons, drag to move, click a region for its groups and the next change.
+- Eleven more regions: Kyiv region, Chernivtsi, Volyn, Zakarpattia, Ivano-Frankivsk, Kirovohrad, Poltava, Sumy, Ternopil, Kharkiv and Chernihiv.
 - Ring and strip no longer show "power on" when there is no schedule for today.
 - Strip and ring show emergency, offline, outdated and demo warnings; ring gets refresh and settings buttons on hover, strip gets a settings button.
 - Countdowns show the time of the next change.
@@ -24,6 +20,17 @@ First release of the Android app.
 - First launch opens settings on Places.
 - Settings: test notification reports when Windows blocks notifications; "Refresh now" shows progress; lead time is disabled while both warnings are off.
 - Better contrast for "possible outage" text, danger buttons and focus outlines in the light theme.
+
+## android 1.0.0 — 2026-11-08
+
+First release of the Android app.
+
+- Onboarding: language, region, group, home screen view, notifications with exact timing, disclaimer.
+- Home screen in three views: card and bar, day ring, all places as a list.
+- Up to 10 places, statistics for 7 days, settings, uk/en/ru.
+- Offline cache with conditional requests and periodic sync.
+- Notifications before outages and before power returns, on schedule changes and when tomorrow is published.
+- Home screen widgets: Cards (one place, several places) and Minimal (ring, pill, text). One layout scaled to any size, outage list with durations and total, countdown refreshed every minute, a mark when data is out of date, dark, light or system theme.
 
 ## desktop 1.0.0 — 2026-11-07
 

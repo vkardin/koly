@@ -2,7 +2,7 @@ name: android-ci
 
 on:
   pull_request:
-    paths: ["android/**", ".github/workflows/android-*.yml"]
+    paths: ["android/**", "web/powermap.*", "web/ua-map.json", ".github/workflows/android-*.yml"]
   push:
     branches: [main]
     paths: ["android/**"]
