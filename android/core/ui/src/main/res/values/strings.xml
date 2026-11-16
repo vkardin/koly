@@ -8,6 +8,8 @@
     <!-- Navigation and common actions -->
     <string name="nav_home">Головна</string>
     <string name="nav_stats">Статистика</string>
+    <string name="nav_map">Карта</string>
+    <string name="map_offline">Немає з’єднання. Карта оновиться, коли з’явиться мережа.</string>
     <string name="nav_settings">Налаштування</string>
     <string name="refresh">Оновити</string>
     <string name="refresh_now">Оновити зараз</string>

@@ -2,10 +2,10 @@ name: desktop-ci
 
 on:
   pull_request:
-    paths: ["desktop/**", ".github/workflows/desktop-*.yml"]
+    paths: ["desktop/**", "web/powermap.*", "web/ua-map.json", ".github/workflows/desktop-*.yml"]
   push:
     branches: [main]
-    paths: ["desktop/**"]
+    paths: ["desktop/**", "web/powermap.*", "web/ua-map.json"]
 
 jobs:
   test:

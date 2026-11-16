@@ -40,6 +40,7 @@ import io.github.vkardin.koly.feature.home.HomeScreen
 import io.github.vkardin.koly.feature.places.PlacesScreen
 import io.github.vkardin.koly.feature.settings.SettingsScreen
 import io.github.vkardin.koly.feature.stats.StatsScreen
+import io.github.vkardin.koly.map.MapScreen
 import io.github.vkardin.koly.notify.Notifier
 import io.github.vkardin.koly.onboarding.OnboardingScreen
 import kotlinx.coroutines.flow.SharingStarted
@@ -82,6 +83,7 @@ class MainActivity : AppCompatActivity() {
 
 private enum class Tab(val route: String, val label: Int, val icon: Int) {
     HOME("home", UiR.string.nav_home, UiR.drawable.ic_home),
+    MAP("map", UiR.string.nav_map, UiR.drawable.ic_map),
     STATS("stats", UiR.string.nav_stats, UiR.drawable.ic_stats),
     SETTINGS("settings", UiR.string.nav_settings, UiR.drawable.ic_settings),
 }
@@ -123,6 +125,7 @@ private fun MainNavigation(onTestNotification: () -> Unit) {
             composable(Tab.HOME.route) {
                 HomeScreen(snackbar = snackbar, onAddPlace = { nav.navigate("places?add=true") })
             }
+            composable(Tab.MAP.route) { MapScreen() }
             composable(Tab.STATS.route) { StatsScreen() }
             composable(Tab.SETTINGS.route) {
                 SettingsScreen(onOpenPlaces = { nav.navigate("places?add=false") }, onTestNotification = onTestNotification)

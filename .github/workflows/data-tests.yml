@@ -25,10 +25,18 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: pip
           cache-dependency-path: data/requirements.txt
 
       - run: pip install -r requirements.txt
 
       - run: python -m pytest -q
+
+      # One real run against every source, written to a temp folder (nothing is published).
+      - name: Live sources (report only)
+        if: github.event_name != 'schedule'
+        continue-on-error: true
+        run: |
+          python run.py --site "$RUNNER_TEMP/site" --report "$RUNNER_TEMP/report.json"
+          cat "$RUNNER_TEMP/report.json"

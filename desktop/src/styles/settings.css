@@ -467,3 +467,31 @@ h1 {
 .test-result {
   margin: 0.75rem 0 0;
 }
+
+/* Power map (shared component from web/powermap.css), mapped to the app theme. */
+.map-host { margin-top: 4px; }
+.map-host .pm {
+  --pm-card: var(--card);
+  --pm-card2: var(--card-2);
+  --pm-line: var(--line);
+  --pm-text: var(--text);
+  --pm-muted: var(--text-2);
+  --pm-warn: var(--warn);
+  --pm-amber: var(--on);
+  --pm-border: var(--bg);
+  font-family: var(--font-text);
+}
+.map-host .pm-stage { border-radius: 16px; }
+.map-host .pm-btn:focus-visible { outline-color: var(--focus); }
+:root[data-theme="light"] .map-host .pm {
+  --pm-sea: #e9ecf3;
+  --pm-nodata: #c3c9d8;
+  --pm-border: #ffffff;
+}
+:root[data-theme="light"] .map-host .pm-label { fill: #141a2b; stroke: #ffffff; }
+:root[data-theme="light"] .map-host .pm-label.on-light { stroke: #ffe7b0; }
+:root[data-theme="light"] .map-host .pm-hatch-bg { fill: #d5d9e3; }
+:root[data-theme="light"] .map-host .pm-hatch-line { stroke: #b4bbcb; }
+:root[data-theme="light"] .map-host .pm-g[data-state="off"] { background: #3a4463; color: #fff; }
+:root[data-theme="light"] .map-host .pm-tip { box-shadow: 0 10px 30px rgba(20, 26, 43, 0.18); }
+:root[data-theme="light"] .map-host .pm-lg-occ::before { background: repeating-linear-gradient(45deg, #d5d9e3 0 3px, #b4bbcb 3px 5px); }

@@ -15,8 +15,8 @@ android {
         applicationId = "io.github.vkardin.koly"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
     }
 
     androidResources {
@@ -54,6 +54,33 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+// The power map is the same module the website uses (web/powermap.*), shipped as assets in map/.
+abstract class CopyMapAssets : DefaultTask() {
+    @get:InputFiles
+    abstract val web: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val target = outputDir.get().asFile.resolve("map")
+        target.deleteRecursively()
+        target.mkdirs()
+        web.files.forEach { it.copyTo(target.resolve(it.name), overwrite = true) }
+    }
+}
+
+val copyMapAssets = tasks.register<CopyMapAssets>("copyMapAssets") {
+    web.from(listOf("powermap.js", "powermap.css", "ua-map.json").map { rootProject.file("../web/$it") })
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(copyMapAssets, CopyMapAssets::outputDir)
     }
 }
 

@@ -123,6 +123,7 @@ fn build_menu<R: Runtime>(
             &CheckMenuItem::with_id(app, "view-ring", label(labels, "viewRing", "Кільце"), true, view == "ring", None::<&str>)?,
         ],
     )?;
+    let map = MenuItem::with_id(app, "map", label(labels, "map", "Карта світла"), true, None::<&str>)?;
     let settings = MenuItem::with_id(app, "settings", label(labels, "settings", "Налаштування"), true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", label(labels, "quit", "Вийти"), true, None::<&str>)?;
     Menu::with_items(
@@ -134,6 +135,7 @@ fn build_menu<R: Runtime>(
             &mode_menu,
             &view_menu,
             &PredefinedMenuItem::separator(app)?,
+            &map,
             &settings,
             &PredefinedMenuItem::separator(app)?,
             &quit,
@@ -165,6 +167,9 @@ fn create_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
             "show-hide" => toggle_main(app),
             "settings" => {
                 let _ = show_settings(app, None);
+            }
+            "map" => {
+                let _ = show_settings(app, Some("map".to_string()));
             }
             "quit" => app.exit(0),
             other => {

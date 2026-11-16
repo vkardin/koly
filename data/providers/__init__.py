@@ -7,6 +7,7 @@ from typing import Protocol
 from common.models import RegionSchedule
 
 from .cherkasyoblenergo import Cherkasyoblenergo
+from .chernivtsioblenergo import Chernivtsioblenergo
 from .dtek_dnem import DtekDnem
 from .dtek_kem import DtekKem
 from .dtek_oem import DtekOem
@@ -15,6 +16,9 @@ from .lvivoblenergo import Lvivoblenergo
 from .manual import ManualFallback, manual_providers
 from .mykolaivoblenergo import Mykolaivoblenergo
 from .rivneoblenergo import Rivneoblenergo
+from . import _mirror
+from .uamonitor import REGIONS as UAMONITOR_REGIONS
+from .uamonitor import WithMirror
 from .zaporizhzhiaoblenergo import Zaporizhzhiaoblenergo
 from .zhytomyroblenergo import Zhytomyroblenergo
 
@@ -32,12 +36,14 @@ AUTOMATIC: list[Provider] = [
     DtekDnem(),
     DtekOem(),
     Lvivoblenergo(),
-    Khmelnytskoblenergo(),
-    Zaporizhzhiaoblenergo(),
+    WithMirror(Khmelnytskoblenergo(), _mirror.oe_outage_data("Khmelnytskoblenerho")),
+    WithMirror(Zaporizhzhiaoblenergo(), _mirror.oe_outage_data("Zaporizhzhiaoblenergo")),
     Zhytomyroblenergo(),
     Rivneoblenergo(),
     Cherkasyoblenergo(),
     Mykolaivoblenergo(),
+    Chernivtsioblenergo(),
+    *UAMONITOR_REGIONS,
 ]
 
 

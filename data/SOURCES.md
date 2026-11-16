@@ -5,12 +5,14 @@ Clients never call these sources directly; they read only the published JSON.
 
 Status legend: **done** — automatic parser; **manual** — no usable automatic source, a schedule can be
 entered by hand in `manual/<region_id>.json` (see [manual/README.md](manual/README.md));
-**todo** — source not found or not machine-readable yet.
+**todo** — source not found or not machine-readable yet; **none** — the operator publishes no schedule a polite client can read.
+
+Some regions are read through the open library `ukraine-energy-monitor` (MIT, pinned to a commit in `requirements.txt`) and open mirrors on GitHub (`providers/uamonitor.py`, `providers/_mirror.py`). A mirror is someone else's copy: it is used only where the operator's own source cannot be read and is checked for freshness.
 
 Sources behind bot challenges or answering 403 to non-browser clients are not worked around:
 the project respects the sources' access rules. Such regions use manual files or wait for an open source.
 
-Last checked: 2026-11-07.
+Last checked: 2026-11-16.
 
 | Region (id) | Provider | URL | Format | Parser | Notes |
 |---|---|---|---|---|---|
@@ -18,26 +20,26 @@ Last checked: 2026-11-07.
 | Dnipropetrovsk (`dnipropetrovsk`) | DTEK DnEM (`dtek-dnem`) | https://app.yasno.ua/api/blackout-service/public/shutdowns/regions/3/dsos/301/planned-outages | API (JSON) | done | Part of the region is served by CEK (same API, `dsos/303`) with its own groups; not published yet, needs a schema decision. When YASNO reports emergency outages without hours, `manual/dnipropetrovsk.json` (made from the DTEK site with `tools/manual_from_dtek.py`) is used if it is current. |
 | Odesa (`odesa`) | DTEK OEM (`dtek-oem`) | https://www.dtek-oem.com.ua/ua/shutdowns | JSON in page (`DisconSchedule.fact`) | done | Sometimes answers with a bot challenge; the region then stays `stale` until the next good answer. |
 | Lviv (`lviv`) | Lvivoblenergo (`lvivoblenergo`) | https://api.loe.lviv.ua/api/menus?page=1&type=photo-grafic | API (JSON with HTML text) | done | Response is about 2 MB, fetched at most every 30 min. No item for today means schedules are not applied (`no_schedules`). |
-| Khmelnytskyi (`khmelnytskyi`) | Khmelnytskoblenergo (`khmelnytskoblenergo`) | https://hoe.com.ua/page/pogodinni-vidkljuchennja | HTML text | done | "Підчерга 1.1 – 00:00-04:00; …". No timestamp at the source. |
-| Zaporizhzhia (`zaporizhzhia`) | Zaporizhzhiaoblenergo (`zaporizhzhiaoblenergo`) | https://www.zoe.com.ua/outage/ | HTML news posts | done | Newest post per date wins, including "ОНОВЛЕНО ГПВ" updates. Hours already include 30 min for switching. |
+| Khmelnytskyi (`khmelnytskyi`) | Khmelnytskoblenergo (`khmelnytskoblenergo`) | https://hoe.com.ua/page/pogodinni-vidkljuchennja | HTML text | done | "Підчерга 1.1 – 00:00-04:00; …". No timestamp at the source. When the source fails or does not answer GitHub's servers, the mirror [OE_OUTAGE_DATA](https://github.com/yaroslav2901/OE_OUTAGE_DATA) is used. |
+| Zaporizhzhia (`zaporizhzhia`) | Zaporizhzhiaoblenergo (`zaporizhzhiaoblenergo`) | https://www.zoe.com.ua/outage/ | HTML news posts | done | Newest post per date wins, including "ОНОВЛЕНО ГПВ" updates. Hours already include 30 min for switching. When the source fails or does not answer GitHub's servers, the mirror [OE_OUTAGE_DATA](https://github.com/yaroslav2901/OE_OUTAGE_DATA) is used. |
 | Zhytomyr (`zhytomyr`) | Zhytomyroblenergo (`zhytomyroblenergo`) | https://www.ztoe.com.ua/unhooking-search.php | HTML table (half-hour cells, windows-1251) | done | Red cells mean no power. |
 | Rivne (`rivne`) | Rivneoblenergo (`rivneoblenergo`) | https://www.roe.vsei.ua/disconnections | HTML table | done | Cells say "Очікується" until hours are published; the region appears after the first published day. |
 | Cherkasy (`cherkasy`) | Cherkasyoblenergo (`cherkasyoblenergo`) | https://www.cherkasyoblenergo.com/ | HTML news posts | done | Home page lists posts; the newest post per date is fetched (at most 3 requests). |
 | Mykolaiv (`mykolaiv`) | Mykolaivoblenergo (`mykolaivoblenergo`) | https://off.energy.mk.ua/api/v2/schedule/active | API (JSON) | done | Half-hour slots, `OFF` and `PROBABLY_OFF`. |
-| Kyiv region (`kyiv`) | DTEK KREM | https://www.dtek-krem.com.ua/ua/shutdowns | JSON in page | manual | Bot challenge. The YASNO API does not list this region. |
-| Donetsk (`donetsk`) | DTEK DEM | https://www.dtek-dem.com.ua/ua/shutdowns | JSON in page | manual | Bot challenge. |
-| Vinnytsia (`vinnytsia`) | Vinnytsiaoblenergo | https://www.voe.com.ua/disconnection/detailed | HTML | manual | HTTP 403 for non-browser clients. |
-| Ternopil (`ternopil`) | Ternopiloblenergo | https://www.toe.com.ua | HTML | manual | HTTP 403 for non-browser clients. |
-| Kirovohrad (`kirovohrad`) | Kirovohradoblenergo | https://kiroe.com.ua/ | HTML news posts | manual | Posts give only the number of queues per period ("з 08:00 до 22:00 – 3 черги"), not hours per group. |
-| Ivano-Frankivsk (`ivano-frankivsk`) | Prykarpattiaoblenergo | https://oe.if.ua/uk/shutdowns_table | Address search | manual | Only an address/account search; no schedule by group found. |
-| Poltava (`poltava`) | Poltavaoblenergo | https://www.poe.pl.ua/disconnection/hrafik-pohodynnoho-vidkliuchennia-elektroenerhii/ | Document + address search | manual | Half-year schedule document; daily hours are not published by group. |
-| Chernivtsi (`chernivtsi`) | Chernivtsioblenergo | https://oblenergo.cv.ua/shutdowns/ | JS app (eSvitlo) | todo | Data is loaded by scripts; find a documented endpoint. |
-| Kharkiv (`kharkiv`) | Kharkivoblenergo | https://oblenergo.kharkiv.ua/uk | HTML news | manual | News say when schedules apply but not the hours per group. |
-| Volyn (`volyn`) | Volynoblenergo | https://energy.volyn.ua/ | Images / JS app | manual | Schedule published as images. |
-| Zakarpattia (`zakarpattia`) | Zakarpattiaoblenergo | https://zakarpat.energy/customers/break-in-electricity-supply/schedule/ | PDF per group | manual | PDFs list addresses of groups; current hours link was empty during the check. |
-| Sumy (`sumy`) | Sumyoblenergo | https://www.soe.com.ua/ | — | todo | Schedule page not found. |
-| Kherson (`kherson`) | Khersonoblenergo | https://www.ksoe.com.ua/ | — | todo | Site did not respond during the check. |
-| Chernihiv (`chernihiv`) | Chernihivoblenergo | https://www.energy.cn.ua/ | — | todo | Site did not respond during the check. |
+| Chernivtsi (`chernivtsi`) | Chernivtsioblenergo (`chernivtsioblenergo`) | https://oblenergo.cv.ua/shutdowns/ | HTML grid (half-hour cells) | done | Rows `inf1`…`inf12`, letters з (on) / в (off) / мз (maybe powered, published as `maybe`). Answers 403 to GitHub's servers (2026-11-16) and no mirror carries it: the region is published only when the site lets the run in. |
+| Kyiv region (`kyiv`) | DTEK KREM (`dtek-krem`) | https://www.dtek-krem.com.ua/ua/shutdowns | Mirror (JSON) | done | The site is behind a bot challenge, so the open mirror [outage-data-ua](https://github.com/Baskerville42/outage-data-ua) (MIT) is read; it must have refreshed within 3 hours. |
+| Donetsk (`donetsk`) | DTEK DEM | https://www.dtek-dem.com.ua/ua/shutdowns | — | none | No schedule published since 12.2024. |
+| Vinnytsia (`vinnytsia`) | Vinnytsiaoblenergo | https://disconnection.voe.com.ua/ | — | none | The only source is behind a Cloudflare challenge. Clients say the operator publishes no open schedule. |
+| Ternopil (`ternopil`) | Ternopiloblenergo (`ternopiloblenergo`) | https://poweron.toe.com.ua | Mirror (JSON) | done | The operator gives hours only by address, so the mirror [OE_OUTAGE_DATA](https://github.com/yaroslav2901/OE_OUTAGE_DATA) is read. |
+| Kirovohrad (`kirovohrad`) | Kirovohradoblenergo (`kirovohradoblenergo`) | https://kiroe.com.ua/electricity-blackout | Text posts in the operator's official Telegram channels | done | library [ukraine-energy-monitor](https://github.com/fastiuk/ukraine-energy-monitor) (public preview `t.me/s/SvitloKropyvnytskyiMisto`). The site's own data is behind a bot challenge. |
+| Ivano-Frankivsk (`ivano-frankivsk`) | Prykarpattiaoblenergo (`prykarpattiaoblenergo`) | https://svitlo.oe.if.ua | API (JSON per queue) | done | library [ukraine-energy-monitor](https://github.com/fastiuk/ukraine-energy-monitor), then mirror [OE_OUTAGE_DATA](https://github.com/yaroslav2901/OE_OUTAGE_DATA). |
+| Poltava (`poltava`) | Poltavaoblenergo (`poltavaoblenergo`) | https://www.poe.pl.ua/disconnection/power-outages/ | HTML table (half-hour cells) | done | library [ukraine-energy-monitor](https://github.com/fastiuk/ukraine-energy-monitor); the site does not answer GitHub's servers, then the mirror [OE_OUTAGE_DATA](https://github.com/yaroslav2901/OE_OUTAGE_DATA) is used. |
+| Kharkiv (`kharkiv`) | Kharkivoblenergo (`kharkivoblenergo`) | https://oblenergo.kharkiv.ua/uk/media_centre/news | RSS with full text | done | library [ukraine-energy-monitor](https://github.com/fastiuk/ukraine-energy-monitor); the site does not answer GitHub's servers, then the mirror [OE_OUTAGE_DATA](https://github.com/yaroslav2901/OE_OUTAGE_DATA) is used. |
+| Volyn (`volyn`) | Volynoblenergo (`volynoblenergo`) | https://energy.volyn.ua/ | Picture (PNG grid) from the operator's API | done | Read by the library [ukraine-energy-monitor](https://github.com/fastiuk/ukraine-energy-monitor). |
+| Zakarpattia (`zakarpattia`) | Zakarpattiaoblenergo (`zakarpattiaoblenergo`) | https://zakarpat.energy/customers/break-in-electricity-supply/schedule/ | Operator's API | done | library [ukraine-energy-monitor](https://github.com/fastiuk/ukraine-energy-monitor), then mirror [OE_OUTAGE_DATA](https://github.com/yaroslav2901/OE_OUTAGE_DATA). No picture published means schedules are not applied (`no_schedules`). |
+| Sumy (`sumy`) | Sumyoblenergo (`sumyoblenergo`) | https://www.soe.com.ua/consumers/shutdowns | Picture in the operator's news | done | library [ukraine-energy-monitor](https://github.com/fastiuk/ukraine-energy-monitor) reads the table from the picture and checks it against itself; a day with unread hours is not published. |
+| Kherson (`kherson`) | Khersonoblenergo | https://www.ksoe.com.ua/ | — | none | Schedules only in the personal cabinet. |
+| Chernihiv (`chernihiv`) | Chernihivoblenergo (`chernihivoblenergo`) | https://chernihivoblenergo.com.ua/blackouts | Mirror (JSON) | done | The operator publishes hours only as a picture (its API is behind Turnstile), so the mirror [OE_OUTAGE_DATA](https://github.com/yaroslav2901/OE_OUTAGE_DATA) is read. |
 
 ## Adding a provider
 
