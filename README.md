@@ -31,6 +31,7 @@ The installer is not code-signed yet. If SmartScreen warns you, click **More inf
 
 - **Region and group, not addresses.** Choose your region and outage group (`1.1`, `3.2`…) once.
 - **Up to 10 places:** home, work, parents, each with its own region and group.
+- **Power map.** Every region on one map, coloured by the share of groups with power right now. Zoom, drag, tap a region for its groups. On the website and in the widget settings.
 - **Status at a glance:** power on, off or maybe off, shown by colour *and* text, with a large countdown to the next change.
 - **Today and tomorrow:** a 24-hour strip labelled with the real switch times, not an even scale.
 - **Three widget views:** Strip, Card and Ring. Stay on top of all windows or sit on the desktop under them.

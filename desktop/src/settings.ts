@@ -4,7 +4,7 @@ import "./styles/settings.css";
 import { emit, listen } from "@tauri-apps/api/event";
 import { disable as disableAutostart, enable as enableAutostart, isEnabled as autostartEnabled } from "@tauri-apps/plugin-autostart";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { APP_VERSION, loadCachedState, type DataState } from "./core/data";
+import { APP_VERSION, DATA_BASE_URL, loadCachedState, type DataState } from "./core/data";
 import { LANGS, agoText, getLang, setLang, t, type StringKey } from "./core/i18n";
 import { sendTest } from "./core/notify";
 import { DEMO_GROUPS, REGION_NAMES } from "./core/regions";
@@ -12,12 +12,16 @@ import { esc, logoMark } from "./core/render";
 import { loadSettings, onSettingsChanged, saveSettings } from "./core/store";
 import { applyTheme, onSystemThemeChange } from "./core/theme";
 import { findUpdate, installAndRestart, type Update } from "./core/update";
-import { MAX_PLACES, defaultSettings, type LocalizedName, type Place, type Settings } from "./core/types";
+import { MAX_PLACES, defaultSettings, type IndexFile, type LocalizedName, type Place, type RegionFile, type Settings } from "./core/types";
+import { createPowerMap, loadAll, type PowerMap } from "@web/powermap.js";
+import geo from "@web/ua-map.json";
+import "@web/powermap.css";
 
-type Section = "appearance" | "places" | "notifications" | "general" | "about";
+type Section = "appearance" | "places" | "map" | "notifications" | "general" | "about";
 const SECTIONS: Array<{ id: Section; key: StringKey; icon: string }> = [
   { id: "appearance", key: "secAppearance", icon: "M4 5h16v10H4zM9 19h6M12 15v4" },
   { id: "places", key: "secPlaces", icon: "M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" },
+  { id: "map", key: "secMap", icon: "M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14" },
   { id: "notifications", key: "secNotifications", icon: "M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16Zm4 4h4" },
   { id: "general", key: "secGeneral", icon: "M4 7h10M18 7h2M4 17h4M12 17h8M14 5v4M8 15v4" },
   { id: "about", key: "secAbout", icon: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-10v6m0-9.5v.5" },
@@ -305,6 +309,57 @@ async function installUpdate() {
   }
 }
 
+// ---- Power map: every region, fetched separately from the widget's own data (which only has the regions in use).
+let powerMap: (PowerMap & { lang: string }) | null = null;
+let mapData: { index: IndexFile; files: Record<string, RegionFile> } | null = null;
+let mapLoadedAt = 0;
+let mapOffline = false;
+let mapLoading = false;
+const MAP_REFRESH_MS = 5 * 60_000;
+
+function renderMap(): string {
+  return `<h1>${esc(t("secMap"))}</h1>
+  <div class="map-host" id="map-host"></div>
+  ${mapOffline ? `<p class="hint">${esc(t("mapOffline"))}</p>` : ""}`;
+}
+
+function mountMap() {
+  const host = app.querySelector<HTMLElement>("#map-host");
+  if (!host) return;
+  if (!powerMap || powerMap.lang !== settings.lang) {
+    powerMap?.destroy();
+    powerMap = Object.assign(createPowerMap({ geo, lang: settings.lang }), { lang: settings.lang });
+    paintMap();
+  }
+  host.replaceChildren(powerMap.root);
+  if (Date.now() - mapLoadedAt > MAP_REFRESH_MS) void loadMapData();
+}
+
+function paintMap() {
+  if (!powerMap) return;
+  if (mapData) return powerMap.update(mapData.index, mapData.files);
+  // Until the full set arrives (or when offline): the regions the widget already has.
+  if (data?.index && !data.demo) powerMap.update(data.index, data.regions);
+}
+
+async function loadMapData() {
+  if (mapLoading) return;
+  mapLoading = true;
+  const wasOffline = mapOffline;
+  try {
+    mapData = await loadAll(DATA_BASE_URL);
+    mapOffline = false;
+  } catch (e) {
+    console.warn("map data failed", e);
+    mapOffline = true;
+  } finally {
+    mapLoading = false;
+    mapLoadedAt = Date.now();
+  }
+  paintMap();
+  if (section === "map" && wasOffline !== mapOffline && !busy()) render();
+}
+
 function renderAbout(): string {
   const src = sourceUrlFor(mainPlace()?.regionId);
   const links: Array<[string, string | null]> = [
@@ -329,6 +384,7 @@ const renderers: Record<Section, () => string> = {
   notifications: renderNotifications,
   general: renderGeneral,
   about: renderAbout,
+  map: renderMap,
 };
 
 /** A selector that finds the same control again after the page is re-rendered. */
@@ -350,7 +406,9 @@ function focusSelector(el: HTMLElement | null): string | null {
 }
 
 function render() {
-  const sel = focusSelector(document.activeElement as HTMLElement | null);
+  // Focus inside the map survives a re-render: the map element is moved, not rebuilt.
+  const mapFocus = powerMap?.root.contains(document.activeElement) ? (document.activeElement as HTMLElement | SVGElement) : null;
+  const sel = mapFocus ? null : focusSelector(document.activeElement as HTMLElement | null);
   document.title = `${t("appName")} — ${t("traySettings")}`;
   app.innerHTML = `<nav class="side">
       <div class="side-brand">${logoMark(26)}<span>Коли <em>Є</em></span></div>
@@ -365,6 +423,10 @@ function render() {
     // A control that is gone (e.g. a removed place): keep focus in the page instead of dropping it to <body>.
     const order = [sel, '[data-action="undo"]', ".content h1", ".nav-item.active"];
     order.map((q) => app.querySelector<HTMLElement>(q)).find(Boolean)?.focus();
+  }
+  if (section === "map") {
+    mountMap();
+    mapFocus?.focus();
   }
 }
 
@@ -590,6 +652,7 @@ async function main() {
   });
   await listen<DataState>("data-updated", (e) => {
     data = e.payload;
+    if (section === "map" && Date.now() - mapLoadedAt > MAP_REFRESH_MS) void loadMapData();
     refreshingData = false;
     clearTimeout(refreshGuard);
     if (!busy()) render();

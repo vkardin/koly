@@ -324,6 +324,7 @@ async function showContextMenu() {
       }),
       await check("lock", "lockPosition", settings.lockPosition, () => void savePatch({ lockPosition: !settings.lockPosition })),
       await PredefinedMenuItem.new({ item: "Separator" }),
+      await MenuItem.new({ id: "map", text: t("trayMap"), action: () => void invoke("open_settings", { section: "map" }) }),
       await MenuItem.new({ id: "settings", text: t("traySettings"), action: () => void invoke("open_settings") }),
       await MenuItem.new({ id: "hide", text: t("hideWidget"), action: () => void win.hide() }),
     ],
