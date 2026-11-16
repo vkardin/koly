@@ -8,6 +8,7 @@ const MAX_ZOOM = 7;
 
 const TEXT = {
   uk: {
+    noSource: 'Оператор не публікує графік у відкритому доступі. Дивіться сайт свого обленерго.',
     title: 'Карта світла', zoomIn: 'Наблизити', zoomOut: 'Віддалити', reset: 'Уся країна',
     legendOn: 'світло є', legendOff: 'світла немає', legendNoData: 'немає графіка', legendOccupied: 'тимчасово окупована',
     groupsOn: 'Світло є у {on} з {total} груп', groupsMaybe: 'можливе відключення: {n}',
@@ -19,6 +20,7 @@ const TEXT = {
     pick: 'Оберіть область на карті, щоб побачити групи.', close: 'Закрити',
   },
   en: {
+    noSource: 'The operator does not publish an open schedule. Check your supplier\'s website.',
     title: 'Power map', zoomIn: 'Zoom in', zoomOut: 'Zoom out', reset: 'Whole country',
     legendOn: 'power on', legendOff: 'no power', legendNoData: 'no schedule', legendOccupied: 'temporarily occupied',
     groupsOn: 'Power on in {on} of {total} groups', groupsMaybe: 'possible outage: {n}',
@@ -30,6 +32,7 @@ const TEXT = {
     pick: 'Pick a region on the map to see its groups.', close: 'Close',
   },
   ru: {
+    noSource: 'Оператор не публикует график в открытом доступе. Смотрите сайт своего облэнерго.',
     title: 'Карта света', zoomIn: 'Приблизить', zoomOut: 'Отдалить', reset: 'Вся страна',
     legendOn: 'свет есть', legendOff: 'света нет', legendNoData: 'нет графика', legendOccupied: 'временно оккупирована',
     groupsOn: 'Свет есть в {on} из {total} групп', groupsMaybe: 'возможное отключение: {n}',
@@ -69,6 +72,9 @@ const NAMES = {
   'chernivtsi': { uk: 'Чернівецька', en: 'Chernivtsi', ru: 'Черновицкая' },
   'chernihiv': { uk: 'Чернігівська', en: 'Chernihiv', ru: 'Черниговская' },
 };
+
+// Regions whose operator publishes no schedule anyone can read (checked 2026-11-16, see data/SOURCES.md).
+const NO_SOURCE = new Set(['vinnytsia', 'donetsk', 'kherson']);
 
 const fill = (s, v) => s.replace(/\{(\w+)\}/g, (_, k) => v[k]);
 const pad = (n) => String(n).padStart(2, '0');
@@ -363,7 +369,7 @@ export function createPowerMap(opts) {
     const r = geo.regions.find((x) => x.id === id);
     if (r && r.occupied) return T.occupied;
     const s = summaries[id];
-    if (!s || s.kind === 'nodata') return T.noData;
+    if (!s || s.kind === 'nodata') return NO_SOURCE.has(id) ? T.noSource : T.noData;
     if (s.kind === 'notoday') return T.noToday;
     if (!s.off && !s.maybe) return T.noOutages;
     return fill(T.groupsOn, { on: s.on, total: s.total }) + (s.maybe ? ' · ' + fill(T.groupsMaybe, { n: s.maybe }) : '');
