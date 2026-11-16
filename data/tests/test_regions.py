@@ -18,6 +18,7 @@ from providers import (
     rivneoblenergo,
     zaporizhzhiaoblenergo,
     zhytomyroblenergo,
+    chernivtsioblenergo,
 )
 from providers.manual import ManualFallback, ManualProvider, manual_providers
 
@@ -344,3 +345,28 @@ def test_no_schedules_status(tmp_path):
     index = json.loads((tmp_path / "v1/index.json").read_text(encoding="utf-8"))
     assert index["regions"][0]["status"] == "no_schedules"
     assert index["regions"][0]["groups"] == GROUPS_12
+
+
+def test_chernivtsi_half_hour_grid():
+    s = chernivtsioblenergo.parse(text("chernivtsioblenergo.html"), date(2026, 11, 16))
+    assert s.region_id == "chernivtsi"
+    assert s.updated_at == "2026-11-16T16:00:00+02:00"
+    assert [d.date for d in s.days] == ["2026-11-16"]
+    assert list(s.days[0].groups) == [str(n) for n in range(1, 13)]
+    assert iv(s, "1", "2026-11-16") == [
+        ("16:00", "18:00", "off"), ("18:00", "18:30", "maybe"),
+        ("20:30", "22:30", "off"), ("22:30", "23:00", "maybe"),
+    ]
+    assert iv(s, "5", "2026-11-16")[0] == ("00:00", "01:00", "off")
+    valid(s)
+
+
+def test_chernivtsi_old_page_is_not_published():
+    with pytest.raises(NotPublished):
+        chernivtsioblenergo.parse(text("chernivtsioblenergo.html"), date(2026, 11, 17))
+
+
+def test_chernivtsi_unknown_cell():
+    page = text("chernivtsioblenergo.html").replace("<o>в</o>", "<o>x</o>", 1)
+    with pytest.raises(ProviderError):
+        chernivtsioblenergo.parse(page, date(2026, 11, 16))

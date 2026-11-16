@@ -7,6 +7,7 @@ from typing import Protocol
 from common.models import RegionSchedule
 
 from .cherkasyoblenergo import Cherkasyoblenergo
+from .chernivtsioblenergo import Chernivtsioblenergo
 from .dtek_dnem import DtekDnem
 from .dtek_kem import DtekKem
 from .dtek_oem import DtekOem
@@ -38,6 +39,7 @@ AUTOMATIC: list[Provider] = [
     Rivneoblenergo(),
     Cherkasyoblenergo(),
     Mykolaivoblenergo(),
+    Chernivtsioblenergo(),
 ]
 
 
