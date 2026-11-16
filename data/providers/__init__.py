@@ -16,6 +16,7 @@ from .lvivoblenergo import Lvivoblenergo
 from .manual import ManualFallback, manual_providers
 from .mykolaivoblenergo import Mykolaivoblenergo
 from .rivneoblenergo import Rivneoblenergo
+from .uamonitor import REGIONS as UAMONITOR_REGIONS
 from .zaporizhzhiaoblenergo import Zaporizhzhiaoblenergo
 from .zhytomyroblenergo import Zhytomyroblenergo
 
@@ -40,6 +41,7 @@ AUTOMATIC: list[Provider] = [
     Cherkasyoblenergo(),
     Mykolaivoblenergo(),
     Chernivtsioblenergo(),
+    *UAMONITOR_REGIONS,
 ]
 
 

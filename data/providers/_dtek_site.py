@@ -60,7 +60,13 @@ def extract_fact(html: str) -> dict:
 
 
 def parse(html: str, region_id: str) -> RegionSchedule:
-    fact = extract_fact(html)
+    return parse_fact(extract_fact(html), region_id)
+
+
+def parse_fact(fact: dict, region_id: str) -> RegionSchedule:
+    """Parses a `DisconSchedule.fact` object (also the format of the open mirrors, see `_mirror`)."""
+    if not isinstance(fact, dict) or not isinstance(fact.get("data"), dict):
+        raise ProviderError("fact has no data")
     days: list[DaySchedule] = []
     for stamp, groups in sorted(fact["data"].items(), key=lambda item: int(item[0])):
         date = datetime.fromtimestamp(int(stamp), KYIV).date().isoformat()
