@@ -124,6 +124,3 @@ body[data-family="koly"] summary:focus-visible,body[data-family="koly"] .retry:f
   .dl{grid-template-columns:1fr}
   .block{padding-block:52px}
 }
-.map-host{min-height:300px}
-.map-nojs{margin:0;padding:40px 0;color:var(--k-muted);text-align:center}
-#map .sub{max-width:72ch}
