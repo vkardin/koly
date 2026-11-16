@@ -165,3 +165,27 @@ REGIONS: list[UaMonitor] = [
     UaMonitor("chernihivoblenergo", "chernihiv", "https://chernihivoblenergo.com.ua/blackouts",
               mirror=_mirror.oe_outage_data("Chernihivoblenergo")),
 ]
+
+
+class WithMirror:
+    """A provider of this project with a mirror behind it, for sources that often fail from GitHub's servers."""
+
+    def __init__(self, provider, mirror: _mirror.Mirror) -> None:
+        self.provider = provider
+        self.mirror = mirror
+        self.id = provider.id
+        self.region_ids = list(provider.region_ids)
+        self.source_url = provider.source_url
+        if hasattr(provider, "min_interval"):
+            self.min_interval = provider.min_interval
+
+    def fetch(self) -> list[RegionSchedule]:
+        try:
+            return self.provider.fetch()
+        except NotPublished:
+            raise
+        except Exception as error:
+            try:
+                return [_mirror.fetch(self.mirror, self.region_ids[0], today_kyiv(), now_kyiv())]
+            except Exception as mirror_error:
+                raise ProviderError(f"{error}; mirror: {mirror_error}"[:400]) from error

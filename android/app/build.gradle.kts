@@ -55,16 +55,34 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
-    // The power map is the same module the website uses (web/powermap.*), shipped as assets.
-    sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/mapAssets"))
 }
 
-val copyMapAssets = tasks.register<Copy>("copyMapAssets") {
-    from(rootProject.file("../web")) { include("powermap.js", "powermap.css", "ua-map.json") }
-    into(layout.buildDirectory.dir("generated/mapAssets/map"))
+// The power map is the same module the website uses (web/powermap.*), shipped as assets in map/.
+abstract class CopyMapAssets : DefaultTask() {
+    @get:InputFiles
+    abstract val web: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val target = outputDir.get().asFile.resolve("map")
+        target.deleteRecursively()
+        target.mkdirs()
+        web.files.forEach { it.copyTo(target.resolve(it.name), overwrite = true) }
+    }
 }
-tasks.named("preBuild") { dependsOn(copyMapAssets) }
+
+val copyMapAssets = tasks.register<CopyMapAssets>("copyMapAssets") {
+    web.from(listOf("powermap.js", "powermap.css", "ua-map.json").map { rootProject.file("../web/$it") })
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(copyMapAssets, CopyMapAssets::outputDir)
+    }
+}
 
 base {
     archivesName.set("koly-${android.defaultConfig.versionName}")
