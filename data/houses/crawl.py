@@ -12,7 +12,8 @@ Accuracy over coverage: a building gets a group only when its settlement, street
 each match exactly one directory entry. Anything ambiguous stays without a group.
 
 Results go to `cache/<crawler>.json.gz`: address key → {"g": [groups], "t": date} or
-{"m": why it was not found, "t": date}. Entries older than `--max-age` days are looked up again.
+{"m": why it was not found, "t": date}. Groups of addresses rarely change: a found group is
+checked again after `--max-age` days (about two and a half months), a miss after a month.
 """
 
 from __future__ import annotations
@@ -41,6 +42,9 @@ class Crawler:
     publishes_as: str  # region id whose schedule the groups belong to
     # Only addresses another crawler could not place (e.g. CEK after DTEK in Dnipropetrovsk).
     after: str | None = None
+    # The directory answers only connections from Ukraine: collected with houses/local.py on a
+    # computer there, not by the GitHub workflow.
+    local: bool = False
 
 
 CRAWLERS: dict[str, Crawler] = {c.id: c for c in [
@@ -52,6 +56,7 @@ CRAWLERS: dict[str, Crawler] = {c.id: c for c in [
     Crawler("khmelnytskyi", "khmelnytskyi-oe", "khmelnytskyi", "khmelnytskyi"),
     Crawler("mykolaiv", "mykolaiv-oe", "mykolaiv", "mykolaiv"),
     Crawler("zhytomyr", "zhytomyr-oe", "zhytomyr", "zhytomyr"),
+    Crawler("poltava", "poltava-oe", "poltava", "poltava", local=True),
 ]}
 
 MIN_GAP = 1.0  # seconds between requests to one directory, whatever the library allows
@@ -60,6 +65,7 @@ MIN_GAP = 1.0  # seconds between requests to one directory, whatever the library
 GAPS = {"dtek-kem": 0.35, "dtek-dnem": 0.35, "cek": 0.5}
 # Raised whenever matching improves: addresses missed by an older matcher are looked up again.
 MATCHER = 5
+MISS_AGE_DAYS = 30
 
 
 @dataclass
@@ -284,7 +290,8 @@ class Walker:
         return path
 
 
-async def crawl(crawler: Crawler, buildings: Path, cache_dir: Path, budget_s: float, max_age_days: int) -> dict:
+async def crawl(crawler: Crawler, buildings: Path | Iterable[Address], cache_dir: Path, budget_s: float,
+                max_age_days: int) -> dict:
     import aiohttp
     from ua_outages import operator
     from ua_outages.http import CachingFetcher, ResponseCache, Throttle
@@ -302,12 +309,15 @@ async def crawl(crawler: Crawler, buildings: Path, cache_dir: Path, budget_s: fl
     gate = load_cache(cache_dir / f"{crawler.after}.json.gz") if crawler.after else None
     today = date.today()
     stale_before = (today - timedelta(days=max_age_days)).isoformat()
+    miss_before = (today - timedelta(days=MISS_AGE_DAYS)).isoformat()
 
     # Work list: bigger settlements first, so the most people are covered soonest.
     todo: list[Address] = []
     sizes: Counter[str] = Counter()
     seen: set[str] = set()
-    for addr, _, _ in read_buildings(buildings, crawler.region):
+    source = ((a for a, _, _ in read_buildings(buildings, crawler.region)) if isinstance(buildings, Path)
+              else (a for a in buildings if a.region == crawler.region))
+    for addr in source:
         if crawler.region != "kyiv-city" and not addr.city:
             continue
         if addr.key in seen:
@@ -318,7 +328,10 @@ async def crawl(crawler: Crawler, buildings: Path, cache_dir: Path, budget_s: fl
             if other is None or other.get("g") or other.get("m") not in ("city", "street"):
                 continue  # not looked up there yet, or found there
         entry = cache.get(addr.key)
-        if entry and entry["t"] >= stale_before and (entry.get("g") or entry.get("v") == MATCHER):
+        # A found group holds for months; a miss is tried again sooner (the directory or the map
+        # may have gained the address), and at once when matching has improved.
+        if entry and (entry["t"] >= stale_before if entry.get("g")
+                      else entry["t"] >= miss_before and entry.get("v") == MATCHER):
             continue
         todo.append(addr)
         sizes[addr.city] += 1
@@ -385,7 +398,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--cache", type=Path, required=True)
     parser.add_argument("--crawler", required=True, choices=sorted(CRAWLERS))
     parser.add_argument("--budget", type=float, default=300, help="minutes")
-    parser.add_argument("--max-age", type=int, default=45, help="days before an address is looked up again")
+    parser.add_argument("--max-age", type=int, default=75, help="days before a found group is checked again")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     summary = asyncio.run(crawl(CRAWLERS[args.crawler], args.buildings, args.cache, args.budget * 60, args.max_age))
