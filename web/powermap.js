@@ -11,6 +11,7 @@ const TILE_CACHE = 48;
 
 const TEXT = {
   uk: {
+    noHouses: 'Будинки для цієї місцевості ще не підключено',
     houseTitle: 'Будинок', houseNoGroup: 'Група цього будинку невідома: оператор не дає її у відкритому довіднику або адресу не знайдено.', houseGroup: 'Група {g}', houseGroups: 'Групи {g}',
     nowOn: 'Зараз світло є', nowOff: 'Зараз світла немає', nowMaybe: 'Зараз можливе відключення', todayOff: 'Сьогодні без світла: {t}', todayNone: 'Сьогодні відключень за графіком немає',
     legendHouses: 'будинки:', legendUnknown: 'група невідома', osm: '© учасники OpenStreetMap', zoomHouses: 'Наблизьте, щоб побачити будинки.',
@@ -27,6 +28,7 @@ const TEXT = {
     pick: 'Оберіть область на карті, щоб побачити групи.', close: 'Закрити',
   },
   en: {
+    noHouses: 'Buildings are not available here yet',
     houseTitle: 'Building', houseNoGroup: 'This building\'s group is unknown: the operator has no open directory or the address was not found.', houseGroup: 'Group {g}', houseGroups: 'Groups {g}',
     nowOn: 'Power is on now', nowOff: 'No power now', nowMaybe: 'Possible outage now', todayOff: 'Off today: {t}', todayNone: 'No scheduled outages today',
     legendHouses: 'buildings:', legendUnknown: 'group unknown', osm: '© OpenStreetMap contributors', zoomHouses: 'Zoom in to see buildings.',
@@ -43,6 +45,7 @@ const TEXT = {
     pick: 'Pick a region on the map to see its groups.', close: 'Close',
   },
   ru: {
+    noHouses: 'Дома для этой местности ещё не подключены',
     houseTitle: 'Дом', houseNoGroup: 'Группа этого дома неизвестна: оператор не даёт её в открытом справочнике или адрес не найден.', houseGroup: 'Группа {g}', houseGroups: 'Группы {g}',
     nowOn: 'Сейчас свет есть', nowOff: 'Сейчас света нет', nowMaybe: 'Сейчас возможно отключение', todayOff: 'Сегодня без света: {t}', todayNone: 'Сегодня отключений по графику нет',
     legendHouses: 'дома:', legendUnknown: 'группа неизвестна', osm: '© участники OpenStreetMap', zoomHouses: 'Приблизьте, чтобы увидеть дома.',
@@ -509,7 +512,8 @@ export function createPowerMap(opts) {
     let wasOn = null;
     function draw() {
       frame = 0;
-      const on = active();
+      // Zoomed in where no buildings are published: keep showing the region instead.
+      const on = active() && (!hIndex || wanted().length > 0);
       if (on !== wasOn) { wasOn = on; onModeChange(); }
       root.classList.toggle('is-houses', on);
       lgHouses.hidden = !on;
@@ -521,7 +525,11 @@ export function createPowerMap(opts) {
       const ctx = canvas.getContext('2d');
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, cw, ch);
-      if (!on) { note.hidden = true; return; }
+      if (!on) {
+        note.textContent = T.noHouses;
+        note.hidden = !(active() && hIndex);
+        return;
+      }
       if (!hIndex) {
         if (!failed) { note.textContent = T.loadingHouses; note.hidden = false; loadIndex(); }
         return;

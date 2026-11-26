@@ -112,9 +112,13 @@ _KINDS = {
 _TOKEN = __import__("re").compile(r"[^\W_]+(?:['’ʼ-][^\W_]+)*")
 
 
+_PARENS = __import__("re").compile(r"\([^()]*\)")
+
+
 def _parts(text: str) -> tuple[str | None, list[str]]:
     from ua_outages.providers._address import fold
 
+    text = _PARENS.sub(" ", text)  # "Хмельницький (Хмельницький РЕМ)": the note is not the name
     kind = None
     words: list[str] = []
     for tok in _TOKEN.findall(fold(text).replace("’", "'").replace("ʼ", "'")):
@@ -157,7 +161,7 @@ def same_name(a: str, b: str) -> bool:
 def _house(text: str) -> str:
     from ua_outages.providers._address import compact, strip_kind
 
-    return compact(strip_kind(text)).replace("корпус", "к").replace("корп", "к")
+    return compact(strip_kind(_PARENS.sub(" ", text))).replace("корпус", "к").replace("корп", "к")
 
 
 def best(choices, query: str, house: bool = False):
@@ -167,6 +171,9 @@ def best(choices, query: str, house: bool = False):
         exact = [c for c in choices if _house(c.label) == want]
         return exact[0] if len(exact) == 1 else None
     found = [c for c in choices if same_name(c.label, query)]
+    if len(found) > 1:
+        # "Наукова" and "Наукова (Брюховичі)": the one without a note is the place itself.
+        found = [c for c in found if not _PARENS.search(c.label)]
     return found[0] if len(found) == 1 else None
 
 
@@ -300,14 +307,14 @@ async def crawl(crawler: Crawler, buildings: Path, cache_dir: Path, budget_s: fl
         http = CachingFetcher(session, lookup.hosts, cache=ResponseCache(ttl=6 * 3600, max_bytes=64 << 20, max_entries=20_000),
                               throttle=Throttle(gap), timeout=25, user_agent=USER_AGENT)
         walker = Walker(lookup, http)
-        dead_streets: set[tuple[str, str]] = set()
+        dead_streets: dict[tuple[str, str], str] = {}  # (city, street) -> why it was not found
         errors_in_row = 0
         for n, addr in enumerate(todo):
             if time.monotonic() - started > budget_s:
                 break
-            if (addr.city, addr.street) in dead_streets:
-                cache[addr.key] = {"m": "street", "t": today.isoformat()}
-                stats["street"] += 1
+            if (reason := dead_streets.get((addr.city, addr.street))) is not None:
+                cache[addr.key] = {"m": reason, "t": today.isoformat()}
+                stats[reason] += 1
                 continue
             try:
                 path = await walker.find(addr)
@@ -322,7 +329,7 @@ async def crawl(crawler: Crawler, buildings: Path, cache_dir: Path, budget_s: fl
                 cache[addr.key] = {"m": reason, "t": today.isoformat()}
                 stats[reason] += 1
                 if reason in ("street", "city"):
-                    dead_streets.add((addr.city, addr.street))
+                    dead_streets[(addr.city, addr.street)] = reason
                 errors_in_row = 0
             except ValueError as error:  # the directory contradicts itself: not worth retrying soon
                 cache[addr.key] = {"m": "invalid", "t": today.isoformat()}

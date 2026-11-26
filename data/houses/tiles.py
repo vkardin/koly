@@ -65,9 +65,14 @@ def _write(path: Path, data: dict) -> bool:
 
 def build(osm: Path, cache_dir: Path, site: Path, generated_at: str) -> dict:
     caches = {cid: load_cache(cache_dir / f"{cid}.json.gz") for cid in CRAWLERS}
+    # Only regions with an open address directory: elsewhere every building would be "group unknown",
+    # and the map keeps showing the region instead.
+    covered = {c.region for c in CRAWLERS.values()}
     tiles: dict[tuple[int, int], list] = defaultdict(list)
     coverage: dict[str, dict[str, int]] = defaultdict(lambda: {"houses": 0, "withGroup": 0})
     for addr, lon, lat in read_buildings(osm / "buildings.tsv.gz"):
+        if addr.region not in covered:
+            continue
         x, y = project(lon, lat)
         key = (math.floor(x / TILE), math.floor(y / TILE))
         found = _groups_for(addr, caches)

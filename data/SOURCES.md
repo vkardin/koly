@@ -12,12 +12,17 @@ Some regions are read through the open library `ukraine-energy-monitor` (MIT, pi
 Sources behind bot challenges or answering 403 to non-browser clients are not worked around:
 the project respects the sources' access rules. Such regions use manual files or wait for an open source.
 
-Last checked: 2026-11-16.
+Every region is also read from the other sources listed for it (another parser of the operator's data, open mirrors) and compared group by group. The result is published in the region file as `checks`: `same`, `different` (with the other source's hours), `older` (the other source has not caught up with the main one) or `failed`. If the main source fails, the first other source that works is published instead.
+
+The CEK part of Dnipropetrovsk is published as its own region, `dnipropetrovsk-cek` (index field `area: "dnipropetrovsk"`).
+
+Last checked: 2026-11-26.
 
 | Region (id) | Provider | URL | Format | Parser | Notes |
 |---|---|---|---|---|---|
 | Kyiv city (`kyiv-city`) | DTEK KEM (`dtek-kem`) | https://app.yasno.ua/api/blackout-service/public/shutdowns/regions/25/dsos/902/planned-outages | API (JSON) | done | dtek-kem.com.ua itself is behind a bot challenge; the public YASNO API serves the same groups (`1.1` … `60.1`). |
-| Dnipropetrovsk (`dnipropetrovsk`) | DTEK DnEM (`dtek-dnem`) | https://app.yasno.ua/api/blackout-service/public/shutdowns/regions/3/dsos/301/planned-outages | API (JSON) | done | Part of the region is served by CEK (same API, `dsos/303`) with its own groups; not published yet, needs a schema decision. When YASNO reports emergency outages without hours, `manual/dnipropetrovsk.json` (made from the DTEK site with `tools/manual_from_dtek.py`) is used if it is current. |
+| Dnipropetrovsk (`dnipropetrovsk`) | DTEK DnEM (`dtek-dnem`) | https://app.yasno.ua/api/blackout-service/public/shutdowns/regions/3/dsos/301/planned-outages | API (JSON) | done | The CEK part of the region is published separately (next row). When YASNO reports emergency outages without hours, `manual/dnipropetrovsk.json` (made from the DTEK site with `tools/manual_from_dtek.py`) is used if it is current. |
+| Dnipropetrovsk, CEK (`dnipropetrovsk-cek`) | CEK (`cek`) | https://cek.dp.ua | API (JSON) | done | library [ukraine-energy-monitor](https://github.com/fastiuk/ukraine-energy-monitor): YASNO `dsos/303`, then the DTEK page and the mirror. |
 | Odesa (`odesa`) | DTEK OEM (`dtek-oem`) | https://www.dtek-oem.com.ua/ua/shutdowns | JSON in page (`DisconSchedule.fact`) | done | Sometimes answers with a bot challenge; the region then stays `stale` until the next good answer. |
 | Lviv (`lviv`) | Lvivoblenergo (`lvivoblenergo`) | https://api.loe.lviv.ua/api/menus?page=1&type=photo-grafic | API (JSON with HTML text) | done | Response is about 2 MB, fetched at most every 30 min. No item for today means schedules are not applied (`no_schedules`). |
 | Khmelnytskyi (`khmelnytskyi`) | Khmelnytskoblenergo (`khmelnytskoblenergo`) | https://hoe.com.ua/page/pogodinni-vidkljuchennja | HTML text | done | "Підчерга 1.1 – 00:00-04:00; …". No timestamp at the source. When the source fails or does not answer GitHub's servers, the mirror [OE_OUTAGE_DATA](https://github.com/yaroslav2901/OE_OUTAGE_DATA) is used. |
@@ -63,3 +68,15 @@ recovers. A failed workflow run opens a separate issue that closes after the nex
   heavy responses less often (`min_interval`).
 - User-Agent `KolyYe/<version> (+https://vkardin.github.io)`.
 - Published files change only when the schedule changes, so clients can use ETag caching.
+
+## House map
+
+`houses/` builds the house layer of the map (`v1/houses/`), run by `.github/workflows/houses.yml`:
+
+1. `houses/osm.py`: every building with a street and number from the OpenStreetMap extract of Ukraine (Geofabrik), with its settlement (`addr:city`, else the settlement area it is in, else a clearly nearest settlement point), and the streets around them. Temporarily occupied territory is left out.
+2. `houses/crawl.py`: the group of each address from the operators' own address directories (YASNO for Kyiv city and Dnipropetrovsk with CEK, Lviv, Ternopil, Khmelnytskyi, Mykolaiv, Zhytomyr), read through `ukraine-energy-monitor`. One request at a time, at least a second apart, every answer cached on the `houses-cache` branch; each address is looked up again after about six weeks. An address gets a group only when its settlement, street and number match exactly one directory entry.
+3. `houses/tiles.py`: tiles of about 11 km with the buildings, their groups and the streets. Clients colour each building by its group's schedule right now.
+
+Regions without an open address directory still show their buildings, as "group unknown".
+
+Map data © OpenStreetMap contributors, [ODbL](https://opendatacommons.org/licenses/odbl/); the published house tiles are under the same licence.

@@ -104,3 +104,9 @@ def test_same_name_handles_kinds_initials_and_order():
     assert same_name("проспект Миру", "пр-т Миру")
     assert same_name("вулиця Кам’янецька", "вул. Кам'янецька")
     assert not same_name("вулиця Садова", "вулиця Садова Нова")
+
+
+def test_notes_in_parentheses_are_not_part_of_the_name():
+    assert best([c(1, "Хмельницький (Хмельницький РЕМ)")], "Хмельницький").id == "1"
+    assert best([c(1, "Петрівка (Петриківський р-н)"), c(2, "Петрівка (Царичанський р-н)")], "Петрівка") is None
+    assert best([c(1, "12 (гуртожиток)")], "12", house=True).id == "1"
