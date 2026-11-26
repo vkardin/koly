@@ -148,7 +148,7 @@ private fun page(
     val homeJs = home?.takeIf { it.matches(Regex("[a-z-]{2,40}")) }?.let { "'$it'" } ?: "null"
     // Panels follow the app theme; the map itself has a dark and a light basemap.
     val light = if (dark) "" else """
-        .pm{--pm-card:#ffffff;--pm-card2:#eef0f6;--pm-line:rgba(20,26,43,.12);--pm-sea:#e9ecf3;--pm-nodata:#c3c9d8;--pm-border:#ffffff;--pm-warn:#a8530a;--pm-h-on:#f0a818;--pm-h-maybe:#e0701a;--pm-h-off:#3a4ac0;--pm-h-unknown:#9aa3b5}
+        .pm{--pm-card:#ffffff;--pm-card2:#eef0f6;--pm-line:rgba(20,26,43,.12);--pm-sea:#e9ecf3;--pm-nodata:#c3c9d8;--pm-border:#ffffff;--pm-warn:#a8530a;--pm-h-on:#f2ad1d;--pm-h-maybe:#e0701a;--pm-h-off:#9aa1ae;--pm-h-unknown:#3b4150}
         .pm-g[data-state="off"]{background:#3a4463;color:#fff}
         .pm-lg-occ::before{background:repeating-linear-gradient(45deg,#d5d9e3 0 3px,#b4bbcb 3px 5px)}
     """

@@ -23,7 +23,7 @@ import os
 from collections import defaultdict
 from pathlib import Path
 
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Polygon
 
 from .crawl import CRAWLERS, Address, load_cache, read_buildings
 
@@ -52,6 +52,25 @@ def _groups_for(addr: Address, caches: dict[str, dict[str, dict]]) -> tuple[str,
     return None
 
 
+def _outline(shape: str, qx: int, qy: int, ox: float, oy: float) -> list[int] | int:
+    """A building outline as offsets from the building's point, simplified to about a metre."""
+    if not shape:
+        return 0
+    pts = [project(*map(float, p.split(","))) for p in shape.split(" ")]
+    if len(pts) < 3:
+        return 0
+    try:
+        poly = Polygon(pts).simplify(0.6 / Q * 1.36, preserve_topology=True)
+    except Exception:  # broken outlines exist; the point is enough then
+        return 0
+    if poly.is_empty or not hasattr(poly, "exterior"):
+        return 0
+    out: list[int] = []
+    for vx, vy in list(poly.exterior.coords)[:-1]:
+        out += [round((vx - ox) * Q) - qx, round((vy - oy) * Q) - qy]
+    return out if len(out) >= 6 else 0
+
+
 def _write(path: Path, data: dict) -> bool:
     raw = json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n"
     if path.exists() and path.read_text(encoding="utf-8") == raw:
@@ -70,13 +89,13 @@ def build(osm: Path, cache_dir: Path, site: Path, generated_at: str) -> dict:
     covered = {c.region for c in CRAWLERS.values()}
     tiles: dict[tuple[int, int], list] = defaultdict(list)
     coverage: dict[str, dict[str, int]] = defaultdict(lambda: {"houses": 0, "withGroup": 0})
-    for addr, lon, lat in read_buildings(osm / "buildings.tsv.gz"):
+    for addr, lon, lat, shape in read_buildings(osm / "buildings.tsv.gz", shapes=True):
         if addr.region not in covered:
             continue
         x, y = project(lon, lat)
         key = (math.floor(x / TILE), math.floor(y / TILE))
         found = _groups_for(addr, caches)
-        tiles[key].append((x, y, addr, found))
+        tiles[key].append((x, y, addr, found, shape))
         coverage[addr.region]["houses"] += 1
         if found:
             coverage[addr.region]["withGroup"] += 1
@@ -101,14 +120,16 @@ def build(osm: Path, cache_dir: Path, site: Path, generated_at: str) -> dict:
     for (tx, ty), houses in tiles.items():
         ox, oy = tx * TILE, ty * TILE
         houses.sort(key=lambda h: (h[1], h[0]))
+        outlines: list = []
         regions: list[str] = []
         group_sets: dict[tuple[int, tuple[str, ...]], int] = {}
         streets: dict[str, int] = {}
         cities: dict[str, int] = {}
         xs, ys, gs, ss, cs, ns = [], [], [], [], [], []
         px = py = 0
-        for x, y, addr, found in houses:
+        for x, y, addr, found, shape in houses:
             qx, qy = round((x - ox) * Q), round((y - oy) * Q)
+            outlines.append(_outline(shape, qx, qy, ox, oy))
             xs.append(qx - px)
             ys.append(qy - py)
             px, py = qx, qy
@@ -143,6 +164,8 @@ def build(osm: Path, cache_dir: Path, site: Path, generated_at: str) -> dict:
             "groups": [[ri, *g] for (ri, g) in group_sets],
             "cities": list(cities), "streets": list(streets),
             "x": xs, "y": ys, "g": gs, "c": cs, "s": ss, "n": ns,
+            # Outline of each building: vertex offsets from its point in 1/Q units, dx,dy pairs; 0 if none.
+            "p": outlines,
             "roads": lines,
         }
         name = f"{tx}_{ty}.json"

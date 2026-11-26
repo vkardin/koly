@@ -167,10 +167,12 @@ const STYLES = {
   dark: 'https://tiles.openfreemap.org/styles/dark',
   light: 'https://tiles.openfreemap.org/styles/positron',
 };
+// Buildings: yellow with power, grey without, orange when an outage is possible, dark when unknown.
 const HOUSE_COLORS = {
-  dark: { on: '#ffc24a', maybe: '#ff8a3d', off: '#7f8cff', unknown: '#8a93a8', nodata: '#323a52', line: '#0f1422', label: '#e6e9f2', halo: '#0f1422' },
-  light: { on: '#f0a818', maybe: '#e0701a', off: '#3a4ac0', unknown: '#9aa3b5', nodata: '#c3c9d8', line: '#ffffff', label: '#141a2b', halo: '#ffffff' },
+  dark: { on: '#ffc94d', maybe: '#ff8a3d', off: '#8c94a6', unknown: '#262c3b', nodata: '#323a52', line: '#0f1422', label: '#e6e9f2', halo: '#0f1422', edge: '#0b0f19' },
+  light: { on: '#f2ad1d', maybe: '#e0701a', off: '#9aa1ae', unknown: '#3b4150', nodata: '#c3c9d8', line: '#ffffff', label: '#141a2b', halo: '#ffffff', edge: '#5b6272' },
 };
+const SHAPES_FROM = 14; // zoom from which buildings are filled as their outlines
 const UA_BOUNDS = [[22.0, 44.3], [40.3, 52.4]];
 const HOUSES_FROM = 11.5; // zoom from which buildings are drawn
 const TILE_CACHE = 80;
@@ -345,15 +347,25 @@ export function createPowerMap(opts) {
       },
     }, before);
     map.addSource('houses', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    const houseColor = ['match', ['get', 's'], 'on', C.on, 'maybe', C.maybe, 'off', C.off, C.unknown];
+    map.addLayer({
+      id: 'houses-fill', type: 'fill', source: 'houses', minzoom: SHAPES_FROM - 0.5,
+      filter: ['==', ['geometry-type'], 'Polygon'],
+      paint: { 'fill-color': houseColor, 'fill-opacity': 0.92 },
+    }, before);
+    map.addLayer({
+      id: 'houses-edge', type: 'line', source: 'houses', minzoom: SHAPES_FROM - 0.5,
+      filter: ['==', ['geometry-type'], 'Polygon'],
+      paint: { 'line-color': C.edge, 'line-width': ['interpolate', ['linear'], ['zoom'], 14, 0.3, 18, 1.2], 'line-opacity': 0.7 },
+    }, before);
     map.addLayer({
       id: 'houses', type: 'circle', source: 'houses', minzoom: HOUSES_FROM - 0.5,
+      filter: ['==', ['geometry-type'], 'Point'],
       paint: {
-        'circle-color': ['match', ['get', 's'], 'on', C.on, 'maybe', C.maybe, 'off', C.off, C.unknown],
-        'circle-opacity': ['match', ['get', 's'], 'unknown', 0.45, 0.95],
-        'circle-radius': ['interpolate', ['exponential', 1.6], ['zoom'], 11, 1.4, 14, 3, 16, 5.5, 18, 10],
-        'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 14, 0, 16, 1],
-        'circle-stroke-color': C.halo,
-        'circle-stroke-opacity': 0.6,
+        'circle-color': houseColor,
+        'circle-radius': ['interpolate', ['exponential', 1.6], ['zoom'], 11, 1.6, 14, 3.2, 16, 5.5, 18, 10],
+        'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 13, 0, 15, 1],
+        'circle-stroke-color': C.edge,
       },
     }, before);
     map.addSource('pick', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
@@ -471,6 +483,8 @@ export function createPowerMap(opts) {
   const warned = new Set(); // tiles whose "still collecting" note was already shown
   function buildFeatures() {
     const now = viewNow();
+    const shapes = map.getZoom() >= SHAPES_FROM - 0.5;
+    const q = hIndex ? hIndex.q : 1024;
     const feats = [];
     for (const t of shown) {
       const cache = new Map();
@@ -478,7 +492,15 @@ export function createPowerMap(opts) {
         const gi = t.g[i];
         let s = cache.get(gi);
         if (s === undefined) { s = stateOf(t, gi, now); cache.set(gi, s); }
-        feats.push({ type: 'Feature', geometry: { type: 'Point', coordinates: toLonLat(t.xs[i], t.ys[i]) }, properties: { k: t.key, i, s } });
+        const p = shapes && t.p ? t.p[i] : 0;
+        let geometry;
+        if (p && p.length >= 6) {
+          const ring = [];
+          for (let j = 0; j < p.length; j += 2) ring.push(toLonLat(t.xs[i] + p[j] / q, t.ys[i] + p[j + 1] / q));
+          ring.push(ring[0]);
+          geometry = { type: 'Polygon', coordinates: [ring] };
+        } else geometry = { type: 'Point', coordinates: toLonLat(t.xs[i], t.ys[i]) };
+        feats.push({ type: 'Feature', geometry, properties: { k: t.key, i, s } });
       }
     }
     return { type: 'FeatureCollection', features: feats };
@@ -541,10 +563,13 @@ export function createPowerMap(opts) {
     results.hidden = true;
     if (houses.active()) {
       const r = 10;
-      const fs = map.queryRenderedFeatures([[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]], { layers: ['houses'] });
+      const inside = map.queryRenderedFeatures(e.point, { layers: ['houses-fill'] })[0];
+      const fs = inside ? [inside] : map.queryRenderedFeatures([[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]], { layers: ['houses', 'houses-fill'] });
       let best = null, bestD = Infinity;
       for (const f of fs) {
-        const p = map.project(f.geometry.coordinates);
+        if (f === inside) { best = f; break; }
+        const c = f.geometry.type === 'Point' ? f.geometry.coordinates : f.geometry.coordinates[0][0];
+        const p = map.project(c);
         const d = (p.x - e.point.x) ** 2 + (p.y - e.point.y) ** 2;
         if (d < bestD) { bestD = d; best = f; }
       }

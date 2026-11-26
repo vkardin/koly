@@ -3,7 +3,8 @@
 ## android 1.6.0 — 2026-11-26
 
 - New map: a real map with streets and place names under the regions and buildings, smooth pinch-zoom and dragging on the graphics chip (MapLibre with OpenFreeMap tiles). Light and dark to match the app.
-- Buildings appear from town level and keep their size as you zoom; tap one to see its group and hours, or add it to your places.
+- Buildings are filled by their own outline: yellow with power, grey without, orange when an outage is possible, dark while the group is unknown. From town level they show as dots; tap one to see its group and hours, or add it to your places.
+- Where the groups of buildings are still being collected, the map says so and how much is known.
 
 ## desktop 1.6.0 — 2026-11-26
 

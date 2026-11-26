@@ -75,13 +75,17 @@ class Address:
         return "|".join(x.casefold() for x in (self.region, self.city, self.street, self.number))
 
 
-def read_buildings(path: Path, region: str | None = None) -> Iterable[tuple[Address, float, float]]:
+def read_buildings(path: Path, region: str | None = None, shapes: bool = False) -> Iterable[tuple]:
+    """(address, lon, lat), plus the outline ("lon,lat lon,lat …" or "") when `shapes` is set."""
     with gzip.open(path, "rt", encoding="utf-8", newline="") as f:
         for row in csv.DictReader(f, delimiter="\t", quoting=csv.QUOTE_NONE):
             if region and row["region"] != region:
                 continue
-            yield (Address(row["region"], row["city"], row["street"], row["old_street"], row["number"]),
-                   float(row["lon"]), float(row["lat"]))
+            addr = Address(row["region"], row["city"], row["street"], row["old_street"], row["number"])
+            if shapes:
+                yield addr, float(row["lon"]), float(row["lat"]), row.get("shape") or ""
+            else:
+                yield addr, float(row["lon"]), float(row["lat"])
 
 
 def load_cache(path: Path) -> dict[str, dict]:
