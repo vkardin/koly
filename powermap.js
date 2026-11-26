@@ -4,6 +4,7 @@
 
 const TEXT = {
   uk: {
+    collecting: 'Черги будинків тут ще збираються: відомо {p}%. Сірі точки — будинки, чия черга поки невідома.',
     noMap: 'Карта не може відобразитися на цьому пристрої (немає WebGL).',
     possible: 'За тижневим графіком можливі відключення: {t}', notice: 'Повідомлення оператора',
     tomorrowOff: 'Завтра без світла: {t}', tomorrowNone: 'Завтра відключень за графіком немає',
@@ -25,6 +26,7 @@ const TEXT = {
     pick: 'Оберіть область на карті, щоб побачити групи.', close: 'Закрити',
   },
   en: {
+    collecting: 'Groups of buildings here are still being collected: {p}% known. Grey dots are buildings whose group is not known yet.',
     noMap: 'The map cannot be shown on this device (no WebGL).',
     possible: 'Possible outages by the weekly schedule: {t}', notice: 'Operator notice',
     tomorrowOff: 'Off tomorrow: {t}', tomorrowNone: 'No scheduled outages tomorrow',
@@ -46,6 +48,7 @@ const TEXT = {
     pick: 'Pick a region on the map to see its groups.', close: 'Close',
   },
   ru: {
+    collecting: 'Очереди домов здесь ещё собираются: известно {p}%. Серые точки — дома, чья очередь пока неизвестна.',
     noMap: 'Карта не может отобразиться на этом устройстве (нет WebGL).',
     possible: 'По недельному графику возможны отключения: {t}', notice: 'Сообщение оператора',
     tomorrowOff: 'Завтра без света: {t}', tomorrowNone: 'Завтра отключений по графику нет',
@@ -465,6 +468,7 @@ export function createPowerMap(opts) {
     return worst;
   }
   let shown = [];
+  const warned = new Set(); // tiles whose "still collecting" note was already shown
   function buildFeatures() {
     const now = viewNow();
     const feats = [];
@@ -503,6 +507,14 @@ export function createPowerMap(opts) {
     prune();
     shown = loaded;
     recolorHouses();
+    // Say so when most buildings in view have no group yet, instead of leaving a grey map unexplained.
+    let total = 0, known = 0;
+    for (const t of shown) { total += t.g.length; for (const g of t.g) if (g >= 0) known++; }
+    const fresh = shown.some((t) => !warned.has(t.key));
+    if (total > 200 && known / total < 0.6 && fresh) {
+      for (const t of shown) warned.add(t.key);
+      flash(fill(T.collecting, { p: Math.round((known / total) * 100) }), 7000);
+    }
   }
   function pick(hit) {
     if (!ready) return;
