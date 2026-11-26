@@ -43,7 +43,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           pip install -r data/requirements.txt -r data/houses/requirements.txt
-          curl -fsSL --retry 3 -o "$RUNNER_TEMP/ukraine.osm.pbf" "$OSM_URL"
+          curl -fsSL --retry 6 --retry-all-errors --retry-delay 30 -o "$RUNNER_TEMP/ukraine.osm.pbf" "$OSM_URL"
           cd data && python -m houses.osm "$RUNNER_TEMP/ukraine.osm.pbf" ../osm
           date -u +%Y-%m-%d > ../osm/date.txt
     outputs:
