@@ -51,6 +51,8 @@ def convert(schedules: dict, region_id: str, groups: tuple[str, ...], today: dat
             for outage in schedule.groups.get(group, ()):
                 start = outage.start.hour * 60 + outage.start.minute if outage.start.date() == day else 0
                 end = outage.end.hour * 60 + outage.end.minute if outage.end.date() == day else 1440
+                if end == 1439:
+                    end = 1440  # "till 23:59" is the end of the day
                 if outage.end.date() < day or outage.start.date() > day:
                     continue
                 spans.append((start, end, "maybe" if outage.possible else "off"))
@@ -144,24 +146,33 @@ class UaMonitor:
         raise ProviderError("; ".join(reasons))
 
 
-REGIONS: list[UaMonitor] = [
+def _checked(provider_id: str, region_id: str, url: str, operator_id: str, oe_name: str | None = None):
+    """A library region; its open mirror (if any) is both the check and the fallback."""
+    from ._checks import Checked, mirror
+
+    checks = [mirror(_mirror.oe_outage_data(oe_name), "oe-outage-data")] if oe_name else []
+    return Checked(UaMonitor(provider_id, region_id, url, operator_id), checks)
+
+
+REGIONS: list = [
     UaMonitor("dtek-krem", "kyiv", "https://www.dtek-krem.com.ua/ua/shutdowns",
               mirror=_mirror.outage_data_ua("kyiv-region")),
-    UaMonitor("volynoblenergo", "volyn",
-              "https://energy.volyn.ua/spozhyvacham/perervy-u-elektropostachanni/hrafik-vidkliuchen/", "volyn-oe"),
-    UaMonitor("zakarpattiaoblenergo", "zakarpattia",
-              "https://zakarpat.energy/customers/break-in-electricity-supply/schedule/", "zakarpattia-oe",
-              _mirror.oe_outage_data("Zakarpattiaoblenerho")),
-    UaMonitor("prykarpattiaoblenergo", "ivano-frankivsk", "https://svitlo.oe.if.ua", "prykarpattia-oe",
-              _mirror.oe_outage_data("Prykarpattiaoblenerho")),
-    UaMonitor("kirovohradoblenergo", "kirovohrad", "https://kiroe.com.ua/electricity-blackout", "kirovohrad-oe"),
-    UaMonitor("poltavaoblenergo", "poltava", "https://www.poe.pl.ua/disconnection/power-outages/", "poltava-oe",
-              _mirror.oe_outage_data("Poltavaoblenergo")),
-    UaMonitor("sumyoblenergo", "sumy", "https://www.soe.com.ua/consumers/shutdowns", "sumy-oe"),
+    _checked("cek", "dnipropetrovsk-cek", "https://cek.dp.ua", "cek"),
+    _checked("volynoblenergo", "volyn",
+             "https://energy.volyn.ua/spozhyvacham/perervy-u-elektropostachanni/hrafik-vidkliuchen/", "volyn-oe"),
+    _checked("zakarpattiaoblenergo", "zakarpattia",
+             "https://zakarpat.energy/customers/break-in-electricity-supply/schedule/", "zakarpattia-oe",
+             "Zakarpattiaoblenerho"),
+    _checked("prykarpattiaoblenergo", "ivano-frankivsk", "https://svitlo.oe.if.ua", "prykarpattia-oe",
+             "Prykarpattiaoblenerho"),
+    _checked("kirovohradoblenergo", "kirovohrad", "https://kiroe.com.ua/electricity-blackout", "kirovohrad-oe"),
+    _checked("poltavaoblenergo", "poltava", "https://www.poe.pl.ua/disconnection/power-outages/", "poltava-oe",
+             "Poltavaoblenergo"),
+    _checked("sumyoblenergo", "sumy", "https://www.soe.com.ua/consumers/shutdowns", "sumy-oe"),
     UaMonitor("ternopiloblenergo", "ternopil", "https://poweron.toe.com.ua",
               mirror=_mirror.oe_outage_data("Ternopiloblenerho")),
-    UaMonitor("kharkivoblenergo", "kharkiv", "https://oblenergo.kharkiv.ua/uk/media_centre/news", "kharkiv-oe",
-              _mirror.oe_outage_data("Kharkivoblenerho")),
+    _checked("kharkivoblenergo", "kharkiv", "https://oblenergo.kharkiv.ua/uk/media_centre/news", "kharkiv-oe",
+             "Kharkivoblenerho"),
     UaMonitor("chernihivoblenergo", "chernihiv", "https://chernihivoblenergo.com.ua/blackouts",
               mirror=_mirror.oe_outage_data("Chernihivoblenergo")),
 ]

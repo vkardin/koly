@@ -487,6 +487,11 @@ h1 {
   --pm-sea: #e9ecf3;
   --pm-nodata: #c3c9d8;
   --pm-border: #ffffff;
+  --pm-h-on: #f0a818;
+  --pm-h-maybe: #d07a1e;
+  --pm-h-off: #3a4463;
+  --pm-h-unknown: #d3d8e3;
+  --pm-h-road: #ffffff;
 }
 :root[data-theme="light"] .map-host .pm-label { fill: #141a2b; stroke: #ffffff; }
 :root[data-theme="light"] .map-host .pm-label.on-light { stroke: #ffe7b0; }

@@ -33,7 +33,7 @@ def test_regions_are_registered_once():
     ids = [r for p in AUTOMATIC for r in p.region_ids]
     assert len(ids) == len(set(ids))
     assert {p.region_ids[0] for p in REGIONS} == {
-        "kyiv", "volyn", "zakarpattia", "ivano-frankivsk", "kirovohrad",
+        "kyiv", "dnipropetrovsk-cek", "volyn", "zakarpattia", "ivano-frankivsk", "kirovohrad",
         "poltava", "sumy", "ternopil", "kharkiv", "chernihiv",
     }  # fmt: skip
 

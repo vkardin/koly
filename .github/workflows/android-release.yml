@@ -50,3 +50,17 @@ jobs:
           gh release create "$GITHUB_REF_NAME" ../dist/koly-$VERSION.apk ../dist/koly-$VERSION.aab \
             --title "Коли Є для Android $VERSION" \
             --notes "Android $VERSION. Details are in CHANGELOG.md."
+      - name: Update the in-app update feed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          code=$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' app/build.gradle.kts)
+          apk=../dist/koly-$VERSION.apk
+          cat > ../dist/latest.json <<JSON
+          {"version":"$VERSION","versionCode":$code,"apk":"https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/koly-$VERSION.apk","sha256":"$(sha256sum "$apk" | cut -d' ' -f1)","size":$(stat -c%s "$apk"),"minSdk":26}
+          JSON
+          cat ../dist/latest.json
+          gh release view android-latest >/dev/null 2>&1 || \
+            gh release create android-latest --prerelease --title "Android update feed" \
+              --notes "Service release used by the app's built-in update. Download the app from the latest android-v* release."
+          gh release upload android-latest ../dist/latest.json --clobber

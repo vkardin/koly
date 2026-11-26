@@ -23,7 +23,7 @@ from typing import Iterable
 from pydantic import ValidationError
 
 from .models import IndexFile, RegionFile, RegionIndexEntry, RegionSchedule
-from .regions import REGION_NAMES, REGION_ORDER
+from .regions import REGION_AREA, REGION_NAMES, REGION_ORDER
 from .timeutil import iso_kyiv
 
 log = logging.getLogger("koly.publish")
@@ -57,6 +57,9 @@ def _dump(model) -> dict:
 
 def _content_hash(data: dict, ignore: Iterable[str]) -> str:
     trimmed = {k: v for k, v in data.items() if k not in set(ignore)}
+    if "checks" in trimmed:
+        # When a source was last read is not news; what it said is.
+        trimmed["checks"] = [{k: v for k, v in c.items() if k != "checkedAt"} for c in trimmed["checks"]]
     raw = json.dumps(trimmed, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
@@ -122,6 +125,7 @@ def publish(site: Path, results: list[ProviderResult], now: datetime) -> Publish
                         status="no_schedules" if schedule.no_schedules else "ok",
                         emergency=schedule.emergency,
                         days=schedule.days,
+                        checks=schedule.checks,
                     )
                 except ValidationError as error:
                     log.error("%s: schedule failed validation: %s", region_id, error)
@@ -161,6 +165,7 @@ def _publish_index(
     entries = [
         RegionIndexEntry(
             id=r.id,
+            area=REGION_AREA.get(r.id),
             name=REGION_NAMES[r.id],
             provider=r.provider,
             groups=r.groups(),

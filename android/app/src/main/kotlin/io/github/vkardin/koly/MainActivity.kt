@@ -6,7 +6,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -15,10 +17,14 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
@@ -33,7 +39,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.vkardin.koly.core.data.AppUpdater
 import io.github.vkardin.koly.core.data.SettingsRepository
+import io.github.vkardin.koly.core.data.UpdateState
 import io.github.vkardin.koly.core.model.AppSettings
 import io.github.vkardin.koly.core.ui.KolyTheme
 import io.github.vkardin.koly.feature.home.HomeScreen
@@ -47,6 +55,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import io.github.vkardin.koly.core.ui.R as UiR
 
@@ -54,7 +63,10 @@ import io.github.vkardin.koly.core.ui.R as UiR
 class RootViewModel @Inject constructor(
     settings: SettingsRepository,
     val notifier: Notifier,
+    val updater: AppUpdater,
 ) : ViewModel() {
+    fun install() = viewModelScope.launch { updater.install() }
+
     /** Null until the stored settings are read. */
     val settings: StateFlow<AppSettings?> = settings.settings
         .map<AppSettings, AppSettings?> { it }
@@ -75,6 +87,7 @@ class MainActivity : AppCompatActivity() {
                     OnboardingScreen()
                 } else {
                     MainNavigation(onTestNotification = root.notifier::showTest)
+                    UpdatePrompt(root)
                 }
             }
         }
@@ -138,4 +151,69 @@ private fun MainNavigation(onTestNotification: () -> Unit) {
             }
         }
     }
+}
+
+/** Offers a newer release once on start (at most every few hours), unless the user postponed it. */
+@Composable
+private fun UpdatePrompt(root: RootViewModel) {
+    val updater = root.updater
+    if (!updater.supported) return
+    LaunchedEffect(Unit) { updater.check() }
+    val update by updater.state.collectAsStateWithLifecycle()
+    var dismissed by remember { mutableStateOf(false) }
+    var accepted by remember { mutableStateOf(false) }
+    val ctx = LocalContext.current
+    if (dismissed) return
+    val u = update
+    if (!accepted) {
+        val available = u as? UpdateState.Available ?: return
+        if (updater.isPostponed(available.version)) return
+        AlertDialog(
+            onDismissRequest = { dismissed = true },
+            title = { Text(stringResource(UiR.string.update_dialog_title)) },
+            text = {
+                Text(stringResource(UiR.string.update_dialog_text, available.version,
+                    android.text.format.Formatter.formatShortFileSize(ctx, available.sizeBytes)))
+            },
+            confirmButton = {
+                TextButton(onClick = { accepted = true; root.install() }) { Text(stringResource(UiR.string.update_install)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { dismissed = true; updater.postpone(available.version) }) { Text(stringResource(UiR.string.update_later)) }
+            },
+        )
+        return
+    }
+    // After "Update": show the download, the permission Android asks for, or what went wrong.
+    val text = when (u) {
+        is UpdateState.Downloading -> stringResource(UiR.string.update_downloading, u.version, (u.progress * 100).toInt())
+        is UpdateState.NeedsPermission -> stringResource(UiR.string.update_permission)
+        is UpdateState.Installing -> stringResource(UiR.string.update_installing, u.version)
+        is UpdateState.Failed -> stringResource(UiR.string.update_failed, u.reason)
+        else -> return
+    }
+    AlertDialog(
+        onDismissRequest = { dismissed = true },
+        title = { Text(stringResource(UiR.string.update_dialog_title)) },
+        text = { Text(text) },
+        confirmButton = {
+            if (u is UpdateState.NeedsPermission) {
+                TextButton(onClick = {
+                    ctx.startActivity(
+                        android.content.Intent(
+                            android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                            android.net.Uri.parse("package:" + ctx.packageName),
+                        ),
+                    )
+                }) { Text(stringResource(UiR.string.update_permission_button)) }
+            }
+        },
+        dismissButton = {
+            if (u is UpdateState.NeedsPermission) {
+                TextButton(onClick = { root.install() }) { Text(stringResource(UiR.string.update_install)) }
+            } else {
+                TextButton(onClick = { dismissed = true }) { Text(stringResource(UiR.string.close)) }
+            }
+        },
+    )
 }

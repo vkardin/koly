@@ -260,4 +260,23 @@
     <string name="widget_preview_2h">2 год</string>
     <string name="widget_preview_total">Загалом: 8 год 30 хв</string>
     <string name="widget_theme_hint">Одна тема для всіх віджетів. «Як у системі» перемикає світлу й темну разом із телефоном, а «Мінімал» бере кольори шпалер.</string>
+    <string name="update_title">Оновлення</string>
+    <string name="update_check">Перевірити оновлення</string>
+    <string name="update_checking">Перевіряю…</string>
+    <string name="update_up_to_date">У вас остання версія</string>
+    <string name="update_available">Доступна версія %1$s</string>
+    <string name="update_install">Оновити</string>
+    <string name="update_downloading">Завантажую версію %1$s: %2$d%%</string>
+    <string name="update_permission">Android просить дозволити застосунку встановлювати оновлення. Увімкніть дозвіл і натисніть «Оновити» ще раз.</string>
+    <string name="update_permission_button">Відкрити дозвіл</string>
+    <string name="update_installing">Встановлюю версію %1$s…</string>
+    <string name="update_failed">Не вдалося оновити: %1$s</string>
+    <string name="update_store">Застосунок оновлює магазин, з якого його встановлено.</string>
+    <string name="update_dialog_title">Нова версія Коли Є</string>
+    <string name="update_dialog_text">Доступна версія %1$s (%2$s). Оновлення завантажиться і встановиться тут, система попросить підтвердити.</string>
+    <string name="update_later">Пізніше</string>
+    <string name="sources_agree">Збігається з: %1$s</string>
+    <string name="source_differs">%1$s показує інакше (оновлено о %2$s): %3$s</string>
+    <string name="source_differs_no_time">%1$s показує інакше: %2$s</string>
+    <string name="source_no_outages">без відключень</string>
 </resources>

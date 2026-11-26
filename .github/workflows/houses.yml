@@ -1,0 +1,148 @@
+name: houses
+
+# The house layer of the power map. Slow on purpose: operators' address directories are read
+# one request at a time, a little every few hours, until every addressed building has been
+# looked up; then each address is checked again about every six weeks.
+on:
+  schedule:
+    - cron: "17 1,7,13,19 * * *"
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: "Minutes each crawler may run"
+        default: "300"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: houses
+  cancel-in-progress: false
+
+env:
+  OSM_URL: https://download.geofabrik.de/europe/ukraine-latest.osm.pbf
+
+jobs:
+  osm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - id: key
+        run: echo "key=osm-$(date -u +%G-%V)-${{ hashFiles('data/houses/osm.py', 'data/houses/regions.geojson') }}" >> "$GITHUB_OUTPUT"
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          path: osm
+          key: ${{ steps.key.outputs.key }}
+      - if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Extract addressed buildings and streets
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          pip install -r data/requirements.txt -r data/houses/requirements.txt
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/ukraine.osm.pbf" "$OSM_URL"
+          cd data && python -m houses.osm "$RUNNER_TEMP/ukraine.osm.pbf" ../osm
+          date -u +%Y-%m-%d > ../osm/date.txt
+    outputs:
+      key: ${{ steps.key.outputs.key }}
+
+  crawl:
+    needs: osm
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        # One job per directory, each one request at a time. YASNO serves three of them: at most three
+        # requests a second to it in all, a small fraction of what its own app makes.
+        crawlers: ["yasno-kem", "yasno-dnem", "yasno-cek", "loe", "ternopil", "khmelnytskyi", "mykolaiv", "zhytomyr"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: osm
+          key: ${{ needs.osm.outputs.key }}
+          fail-on-cache-miss: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: data/*requirements.txt
+      - run: pip install -r data/requirements.txt -r data/houses/requirements.txt
+      - name: Look up addresses
+        working-directory: data
+        run: |
+          git fetch --depth 1 origin houses-cache && git worktree add ../cache-branch FETCH_HEAD || mkdir -p ../cache-branch
+          mkdir -p ../cache-branch/cache
+          set -- ${{ matrix.crawlers }}
+          budget=$(( ${{ inputs.budget || 300 }} / $# ))
+          for c in "$@"; do
+            python -m houses.crawl --buildings ../osm/buildings.tsv.gz --cache ../cache-branch/cache --crawler "$c" --budget "$budget" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+      - name: Save what was found
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          push="$RUNNER_TEMP/push"
+          for attempt in 1 2 3 4 5; do
+            rm -rf "$push"; git worktree prune
+            if git fetch -q --depth 1 origin houses-cache; then
+              git worktree add -q --detach "$push" FETCH_HEAD
+            else
+              git worktree add -q --orphan -b "houses-cache-$attempt" "$push"
+            fi
+            mkdir -p "$push/cache"
+            # Only this job's files: the other jobs push their own.
+            for c in ${{ matrix.crawlers }}; do
+              [ -f "cache-branch/cache/$c.json.gz" ] && cp "cache-branch/cache/$c.json.gz" "$push/cache/"
+            done
+            git -C "$push" add cache
+            if git -C "$push" diff --cached --quiet; then exit 0; fi
+            git -C "$push" commit -q -m "houses: ${{ matrix.crawlers }}"
+            git -C "$push" push -q origin HEAD:refs/heads/houses-cache && exit 0
+            sleep $(( attempt * 7 ))
+          done
+          exit 1
+
+  tiles:
+    needs: [osm, crawl]
+    if: always() && needs.osm.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: data-publish
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: osm
+          key: ${{ needs.osm.outputs.key }}
+          fail-on-cache-miss: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: data/*requirements.txt
+      - run: pip install -r data/requirements.txt -r data/houses/requirements.txt
+      - name: Build tiles
+        run: |
+          mkdir -p cache-branch
+          if git fetch --depth 1 origin houses-cache; then git worktree add cache-branch FETCH_HEAD; fi
+          mkdir -p cache-branch/cache
+          git fetch --depth 1 origin gh-pages
+          git worktree add site FETCH_HEAD
+          git -C site switch -c gh-pages
+          cd data && python -m houses.tiles --osm ../osm --cache ../cache-branch/cache --site ../site
+      - name: Publish if changed
+        working-directory: site
+        run: |
+          git add -A v1/houses
+          git diff --cached --quiet && { echo "No changes."; exit 0; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "data: update house map"
+          git push origin gh-pages

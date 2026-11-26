@@ -328,7 +328,7 @@ function mountMap() {
   if (!host) return;
   if (!powerMap || powerMap.lang !== settings.lang) {
     powerMap?.destroy();
-    powerMap = Object.assign(createPowerMap({ geo, lang: settings.lang }), { lang: settings.lang });
+    powerMap = Object.assign(createPowerMap({ geo, lang: settings.lang, housesBase: DATA_BASE_URL + "houses/" }), { lang: settings.lang });
     paintMap();
   }
   host.replaceChildren(powerMap.root);

@@ -1,5 +1,5 @@
 // Mounts the power map on the site. Reads the same published files as the live status card.
-import { createPowerMap, loadAll } from '/koly/powermap.js?v=1';
+import { createPowerMap, loadAll } from '/koly/powermap.js?v=2';
 
 const host = document.querySelector('#power-map');
 if (host) {
@@ -8,7 +8,7 @@ if (host) {
   (async () => {
     const geo = await (await fetch('/koly/ua-map.json?v=1')).json();
     const map = createPowerMap({
-      geo, lang,
+      geo, lang, housesBase: base + 'houses/',
       onSelect(id) {
         // Picking a region on the map also switches the live status card above, when it has that region.
         const sel = document.querySelector('#w-region');

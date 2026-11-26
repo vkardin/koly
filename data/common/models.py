@@ -92,6 +92,28 @@ class Emergency(_Model):
     since: str | None = None
 
 
+# "older": differs, but the other source has not caught up with the main one's latest update.
+CheckResult = Literal["same", "different", "older", "failed"]
+SourceKind = Literal["operator", "library", "mirror"]
+
+
+class SourceCheck(_Model):
+    """The same region read from another source, to catch parsing errors and late updates.
+
+    `days` is set only for a `different` result: the other source's version of the dates
+    that differ (or that only it has), so clients can show both with their sources.
+    """
+
+    source: str
+    kind: SourceKind
+    name: str
+    url: str
+    checkedAt: str
+    updatedAt: str | None = None
+    result: CheckResult
+    days: list[DaySchedule] = Field(default_factory=list)
+
+
 class RegionFile(_Model):
     id: str
     provider: str
@@ -101,6 +123,7 @@ class RegionFile(_Model):
     status: RegionStatus
     emergency: Emergency = Field(default_factory=Emergency)
     days: list[DaySchedule]
+    checks: list[SourceCheck] = Field(default_factory=list)
 
     @field_validator("fetchedAt", "updatedAt")
     @classmethod
@@ -127,6 +150,9 @@ class RegionFile(_Model):
 
 class RegionIndexEntry(_Model):
     id: str
+    # For a part of a region served by its own operator (e.g. CEK in Dnipropetrovsk): the
+    # region on the map. None for whole regions.
+    area: str | None = None
     name: LocalizedName
     provider: str
     groups: list[str]
@@ -156,3 +182,4 @@ class RegionSchedule(_Model):
     days: list[DaySchedule]
     emergency: Emergency = Field(default_factory=Emergency)
     no_schedules: bool = False
+    checks: list[SourceCheck] = Field(default_factory=list)
