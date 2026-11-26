@@ -80,3 +80,26 @@
 .pm-alt p{color:var(--pm-muted)}
 .pm-alt a{color:inherit}
 .pm-alt ul{margin:6px 0 0;padding:0 0 0 16px;display:grid;gap:2px}
+
+/* Address search above the map. */
+.pm-search{position:relative}
+.pm-search[hidden]{display:none}
+.pm-search input{width:100%;box-sizing:border-box;height:42px;padding:0 14px;border-radius:14px;border:1px solid var(--pm-line);background:var(--pm-card2);color:var(--pm-text);font:inherit;font-size:15px}
+.pm-search input::placeholder{color:var(--pm-muted)}
+.pm-search input:focus-visible{outline:2px solid var(--pm-amber);outline-offset:1px}
+.pm-results{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:5;margin:0;padding:4px;list-style:none;background:var(--pm-card2);border:1px solid var(--pm-line);border-radius:14px;box-shadow:0 14px 34px #0008;max-height:320px;overflow:auto}
+.pm-results[hidden]{display:none}
+.pm-res{display:grid;padding:8px 10px;border-radius:10px;cursor:pointer;outline:none}
+.pm-res span{font-size:12.5px;color:var(--pm-muted)}
+.pm-res:hover,.pm-res:focus-visible{background:color-mix(in srgb,var(--pm-amber) 16%,transparent)}
+.pm-res-note{padding:8px 10px;font-size:13px;color:var(--pm-muted)}
+
+/* Time on the map. */
+.pm-time{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--pm-muted)}
+.pm-time input{flex:1;accent-color:var(--pm-amber);min-width:0}
+.pm-time-text{min-width:9.5em;font-variant-numeric:tabular-nums}
+.pm.is-future .pm-time-text{color:var(--pm-amber);font-weight:600}
+.pm-now-btn{border:1px solid var(--pm-line);background:var(--pm-card2);color:var(--pm-text);border-radius:10px;padding:5px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.pm-now-btn[hidden]{display:none}
+.pm-add{margin-top:12px;border:0;border-radius:12px;padding:9px 14px;background:var(--pm-amber);color:#141a2b;font:inherit;font-weight:600;cursor:pointer}
+.pm-add:disabled{opacity:.7;cursor:default}

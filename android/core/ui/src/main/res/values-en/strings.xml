@@ -3,7 +3,6 @@
     <string name="app_name">Koly Ye</string>
 
     <string name="nav_home">Home</string>
-    <string name="nav_stats">Statistics</string>
     <string name="nav_map">Map</string>
     <string name="map_offline">No connection. The map will update when you are back online.</string>
     <string name="nav_settings">Settings</string>
@@ -105,14 +104,6 @@
     <string name="default_place_label">Home</string>
     <string name="no_places">Add a place to see its schedule</string>
     <string name="status_region_off">no data</string>
-
-    <string name="stats_title">Statistics</string>
-    <string name="stats_subtitle">Hours without power over 7 days — by schedule</string>
-    <string name="stats_total">Week total: %1$s h</string>
-    <string name="stats_maybe">Plus %1$s h of possible outages</string>
-    <string name="stats_no_data">No data yet. Statistics are built from the schedules the app has received.</string>
-    <string name="stats_day_description">%1$s: %2$s h without power by schedule</string>
-    <string name="stats_by_schedule">by schedule</string>
 
     <string name="settings_title">Settings</string>
     <string name="sec_appearance">Appearance</string>

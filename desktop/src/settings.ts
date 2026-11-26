@@ -328,7 +328,22 @@ function mountMap() {
   if (!host) return;
   if (!powerMap || powerMap.lang !== settings.lang) {
     powerMap?.destroy();
-    powerMap = Object.assign(createPowerMap({ geo, lang: settings.lang, housesBase: DATA_BASE_URL + "houses/" }), { lang: settings.lang });
+    powerMap = Object.assign(
+      createPowerMap({
+        geo,
+        lang: settings.lang,
+        housesBase: DATA_BASE_URL + "houses/",
+        home: mainPlace()?.regionId ?? null,
+        // A building picked on the map becomes a place, with its region and group.
+        onAddPlace: ({ regionId, group, label }) => {
+          if (settings.places.length >= MAX_PLACES) return false;
+          const place: Place = { id: newId(), label, regionId, group };
+          void update({ places: [...settings.places, place], mainPlaceId: settings.mainPlaceId ?? place.id });
+          return true;
+        },
+      }),
+      { lang: settings.lang },
+    );
     paintMap();
   }
   host.replaceChildren(powerMap.root);

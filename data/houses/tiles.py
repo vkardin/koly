@@ -95,6 +95,8 @@ def build(osm: Path, cache_dir: Path, site: Path, generated_at: str) -> dict:
 
     out_dir = site / "v1" / "houses"
     written = 0
+    # Street index for the map's address search: (region, city, street) -> tiles it is in.
+    street_tiles: dict[tuple[str, str, str], dict[str, int]] = defaultdict(dict)
     names: set[str] = set()
     for (tx, ty), houses in tiles.items():
         ox, oy = tx * TILE, ty * TILE
@@ -118,6 +120,8 @@ def build(osm: Path, cache_dir: Path, site: Path, generated_at: str) -> dict:
             else:
                 gs.append(-1)
             ss.append(streets.setdefault(addr.street, len(streets)))
+            st = street_tiles[(addr.region, addr.city, addr.street)]
+            st[f"{tx}_{ty}"] = st.get(f"{tx}_{ty}", 0) + 1
             cs.append(cities.setdefault(addr.city, len(cities)))
             ns.append(addr.number)
         lines = []
@@ -151,9 +155,17 @@ def build(osm: Path, cache_dir: Path, site: Path, generated_at: str) -> dict:
         "v": 1, "tileSize": TILE, "q": Q, "qRoads": QR,
         "projection": {"lon0": LON0, "lat0": LAT0, "k": K, "cosLat": round(COS, 9)},
         "attribution": "© OpenStreetMap contributors (ODbL)",
+        "streets": "streets.json",
         "tiles": {f"{tx}_{ty}": len(h) for (tx, ty), h in sorted(tiles.items())},
         "coverage": {r: coverage[r] for r in sorted(coverage)},
     }
+    region_list = sorted({r for r, _, _ in street_tiles})
+    items = sorted(street_tiles.items(), key=lambda kv: -sum(kv[1].values()))
+    written += _write(out_dir / "streets.json", {
+        "v": 1, "regions": region_list,
+        "items": [[region_list.index(r), c, st, sorted(t, key=lambda k: -t[k])] for (r, c, st), t in items],
+    })
+    names.add("streets.json")
     index_path = out_dir / "index.json"
     try:
         old = json.loads(index_path.read_text(encoding="utf-8"))

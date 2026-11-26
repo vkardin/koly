@@ -93,6 +93,8 @@ def test_tiles_put_buildings_where_the_map_draws_them(tmp_path: Path):
     assert abs(tx * 8 + tile["x"][0] / 1024 - x) < 0.002 and abs(ty * 8 + tile["y"][0] / 1024 - y) < 0.002
     assert tile["regions"] == ["lviv"] and tile["groups"] == [[0, "1.2"]] and tile["g"] == [0]
     assert index["coverage"]["lviv"] == {"houses": 1, "withGroup": 1}
+    streets = json.loads((tmp_path / "site/v1/houses/streets.json").read_text())
+    assert streets["items"] == [[0, "Львів", "Наукова", [name]]]
 
 
 def test_same_name_handles_kinds_initials_and_order():
