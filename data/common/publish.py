@@ -126,6 +126,8 @@ def publish(site: Path, results: list[ProviderResult], now: datetime) -> Publish
                         emergency=schedule.emergency,
                         days=schedule.days,
                         checks=schedule.checks,
+                        notice=schedule.notice,
+                        possible=schedule.possible,
                     )
                 except ValidationError as error:
                     log.error("%s: schedule failed validation: %s", region_id, error)

@@ -18,6 +18,7 @@ from .mykolaivoblenergo import Mykolaivoblenergo
 from .rivneoblenergo import Rivneoblenergo
 from . import _mirror
 from ._checks import Checked, library, mirror
+from ._extras import DtekExtras
 from .uamonitor import REGIONS as UAMONITOR_REGIONS
 from .zaporizhzhiaoblenergo import Zaporizhzhiaoblenergo
 from .zhytomyroblenergo import Zhytomyroblenergo
@@ -42,9 +43,9 @@ def _dtek(name: str) -> object:
 # Each region: its main source, then other sources it is checked against (see `_checks`).
 # Library sources here are a second, independent parser of the same operator's data.
 AUTOMATIC: list[Provider] = [
-    Checked(DtekKem(), [_dtek("kyiv")]),
-    Checked(DtekDnem(), [_dtek("dnipro")]),
-    Checked(DtekOem(), [_dtek("odesa")]),
+    Checked(DtekKem(), [_dtek("kyiv")], DtekExtras("kyiv")),
+    Checked(DtekDnem(), [_dtek("dnipro")], DtekExtras("dnipro")),
+    Checked(DtekOem(), [_dtek("odesa")], DtekExtras("odesa")),
     Checked(Lvivoblenergo(), [_oe("Lvivoblenerho"), library("lviv-oe", "https://poweron.loe.lviv.ua")]),
     Checked(Khmelnytskoblenergo(), [_oe("Khmelnytskoblenerho"),
                                     library("khmelnytskyi-oe", "https://hoe.com.ua/page/pogodinni-vidkljuchennja")]),

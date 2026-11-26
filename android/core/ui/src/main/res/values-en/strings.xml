@@ -249,4 +249,6 @@
     <string name="source_differs">%1$s shows other hours (updated at %2$s): %3$s</string>
     <string name="source_differs_no_time">%1$s shows other hours: %2$s</string>
     <string name="source_no_outages">no outages</string>
+    <string name="possible_outages">Possible outages by the weekly schedule: %1$s</string>
+    <string name="operator_notice">Operator notice</string>
 </resources>

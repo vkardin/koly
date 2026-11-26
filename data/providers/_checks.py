@@ -103,9 +103,11 @@ def _previous(site: Path | None, region_id: str) -> RegionFile | None:
 class Checked:
     """`provider` (one region) cross-checked against `sources`, in order of trust."""
 
-    def __init__(self, provider, sources: list[Source]) -> None:
+    def __init__(self, provider, sources: list[Source], extras=None) -> None:
         self.provider = provider
         self.sources = sources
+        # Optional: returns (operator notice, weekly possible schedule) for the region.
+        self.extras = extras
         self.id = provider.id
         self.region_ids = list(provider.region_ids)
         self.source_url = provider.source_url
@@ -183,4 +185,12 @@ class Checked:
             checks.append(SourceCheck(**base, updatedAt=schedule.updated_at, result=result, days=days))
             if result == "different":
                 log.warning("%s: %s disagrees on %s", region_id, source.id, [d.date for d in days] or "schedules")
-        return [main.model_copy(update={"checks": checks})]
+        update: dict = {"checks": checks}
+        if self.extras is not None:
+            try:
+                notice, possible = self.extras()
+                update["notice"] = notice
+                update["possible"] = [d for d in possible if d.date >= today]
+            except Exception as error:  # extras never cost the region its schedule
+                log.warning("%s: notice and possible schedule not read: %s", region_id, error)
+        return [main.model_copy(update=update)]
