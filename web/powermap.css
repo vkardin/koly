@@ -4,29 +4,12 @@
   --pm-card:var(--k-card,#171e30);--pm-card2:var(--k-card2,#1e263b);--pm-line:var(--k-line,#273049);
   --pm-text:var(--k-text,#f4f6fb);--pm-muted:var(--k-muted,#aeb6ca);--pm-amber:#ffc24a;--pm-warn:var(--k-warn,#ffb35c);
   --pm-sea:var(--pm-card);--pm-border:#0f1422;--pm-nodata:#323a52;
-  --pm-h-on:#ffc24a;--pm-h-maybe:#d9822b;--pm-h-off:#7d8bc4;--pm-h-unknown:#2f3750;--pm-h-road:#2a3350;
+  --pm-h-on:#ffc24a;--pm-h-maybe:#ff8a3d;--pm-h-off:#7f8cff;--pm-h-unknown:#8a93a8;--pm-h-road:#2a3350;
   display:grid;gap:12px;color:var(--pm-text)
 }
-.pm-stage{position:relative;border:1px solid var(--pm-line);border-radius:20px;overflow:hidden;background:var(--pm-sea);touch-action:none;aspect-ratio:1000/690;min-height:220px}
-.pm-svg{display:block;width:100%;height:100%;cursor:grab;user-select:none;-webkit-user-select:none}
-.pm-svg.is-dragging{cursor:grabbing}
-.pm-region{fill:var(--pm-nodata);stroke:var(--pm-border);stroke-linejoin:round;transition:fill .4s ease,filter .15s ease;vector-effect:non-scaling-stroke;stroke-width:1.1px;cursor:pointer;outline:none}
-.pm-region.is-nodata{fill:var(--pm-nodata)}
-.pm-region.is-occupied{fill:url(#pm-hatch);cursor:help}
-.pm-hatch-bg{fill:#262b38}
-.pm-hatch-line{stroke:#3d4459;stroke-width:2.4}
-.pm-region:not(.is-occupied):hover{filter:brightness(1.18)}
-.pm-region:focus-visible{stroke:var(--pm-text);stroke-width:2.5px}
-.pm-region.is-selected{stroke:var(--pm-text);stroke-width:2.5px}
-.pm-labels{pointer-events:none;font-family:inherit;font-weight:600}
-.pm-label{fill:#e6e9f2;text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:#0f1422;stroke-width:3px;stroke-linejoin:round;vector-effect:non-scaling-stroke}
-.pm-label.on-light{fill:#141a2b;stroke:#ffe7b0}
-.pm-label.is-small{display:none}
-.pm-labels.is-zoomed .pm-label.is-small{display:inline}
-.pm-controls{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
-.pm-btn{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;border:1px solid var(--pm-line);background:color-mix(in srgb,var(--pm-card2) 92%,transparent);color:var(--pm-text);cursor:pointer;padding:0}
-.pm-btn:hover{border-color:var(--pm-muted)}
-.pm-btn:focus-visible{outline:2px solid var(--pm-amber);outline-offset:2px}
+.pm-stage{position:relative;border:1px solid var(--pm-line);border-radius:20px;overflow:hidden;background:var(--pm-sea);aspect-ratio:1000/690;min-height:320px}
+.pm-map{position:absolute;inset:0}
+.pm-nomap{margin:0;padding:24px;color:var(--pm-muted);font-size:14px}
 .pm-tip{position:absolute;transform:translate(-50%,calc(-100% - 12px));pointer-events:none;background:var(--pm-card2);border:1px solid var(--pm-line);border-radius:12px;padding:7px 11px;font-size:13px;line-height:1.35;display:grid;max-width:260px;box-shadow:0 10px 30px #0007;z-index:2}
 .pm-tip.below{transform:translate(-50%,16px)}
 .pm-tip[hidden]{display:none}
@@ -54,14 +37,8 @@
 .pm-g[data-state="maybe"]{background:repeating-linear-gradient(135deg,#8a6a2b 0 6px,#2a3350 6px 12px);color:#fff}
 .pm-upd{margin-top:10px!important;font-size:12px;color:var(--pm-muted)}
 .pm-foot{margin:0;font-size:12px;color:var(--pm-muted)}
-@media (prefers-reduced-motion:reduce){.pm-region{transition:none}}
-.pm-labels.is-hidden{display:none}
 
 /* Buildings, drawn on a canvas once zoomed in to a town. */
-.pm-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.pm.is-houses .pm-region{fill:var(--pm-sea)!important;stroke:var(--pm-line)}
-.pm.is-houses .pm-region:not(.is-occupied):hover{filter:none}
-.pm.is-houses .pm-labels{display:none}
 .pm-note{position:absolute;left:10px;bottom:10px;padding:5px 10px;border-radius:10px;font-size:12px;background:color-mix(in srgb,var(--pm-card2) 92%,transparent);border:1px solid var(--pm-line);color:var(--pm-muted);pointer-events:none}
 .pm-note[hidden]{display:none}
 .pm-lg-houses{display:inline-flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
@@ -106,3 +83,18 @@
 .pm-notice{margin-top:10px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--pm-warn) 12%,transparent);border:1px solid color-mix(in srgb,var(--pm-warn) 35%,transparent);font-size:13px;display:grid;gap:4px}
 .pm-notice b{color:var(--pm-warn);font-size:12.5px}
 .pm-notice p{margin:0!important}
+
+/* MapLibre controls in the map's colours. */
+.pm .maplibregl-ctrl-group{background:color-mix(in srgb,var(--pm-card2) 94%,transparent);border:1px solid var(--pm-line);border-radius:12px;box-shadow:none;overflow:hidden}
+.pm .maplibregl-ctrl-group button{width:38px;height:38px;background:transparent;color:var(--pm-text)}
+.pm .maplibregl-ctrl-group button+button{border-top:1px solid var(--pm-line)}
+.pm.pm-dark .maplibregl-ctrl-group button .maplibregl-ctrl-icon{filter:invert(1) brightness(1.6)}
+.pm .maplibregl-ctrl-group button:focus-visible{outline:2px solid var(--pm-amber);outline-offset:-2px}
+.pm .pm-locate{display:grid;place-items:center}
+.pm.pm-dark .maplibregl-ctrl-attrib{background:rgba(15,20,34,.75);color:var(--pm-muted)}
+.pm.pm-dark .maplibregl-ctrl-attrib a{color:var(--pm-muted)}
+.pm.pm-dark .maplibregl-ctrl-attrib-button{filter:invert(1)}
+.pm-me{width:16px;height:16px;border-radius:50%;background:#4a90ff;border:3px solid #fff;box-shadow:0 0 0 8px rgba(74,144,255,.25)}
+.pm-lg-regions{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.pm-lg-regions[hidden]{display:none}
+.pm-light .pm-hl-off::before{background:#3a4ac0}

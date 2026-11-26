@@ -1,5 +1,14 @@
 # Changelog
 
+## android 1.6.0 — 2026-11-26
+
+- New map: a real map with streets and place names under the regions and buildings, smooth pinch-zoom and dragging on the graphics chip (MapLibre with OpenFreeMap tiles). Light and dark to match the app.
+- Buildings appear from town level and keep their size as you zoom; tap one to see its group and hours, or add it to your places.
+
+## desktop 1.6.0 — 2026-11-26
+
+- New map with streets and place names, smooth zoom and dragging; follows the light or dark theme.
+
 ## android 1.5.1 — 2026-11-26
 
 - The operator's notice, word for word, on the home card and the map (for example, that emergency outages replace the schedule in part of the region).

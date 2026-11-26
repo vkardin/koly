@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 export default defineConfig({
   clearScreen: false,
-  // The power map (web/powermap.*, web/ua-map.json) is shared with the website.
+  // The power map (web/powermap.*, web/ua-regions.json) is shared with the website.
   resolve: { alias: { "@web": resolve(__dirname, "../web") } },
   server: { port: 1420, strictPort: true, fs: { allow: [".", "../web"] } },
   build: {
