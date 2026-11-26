@@ -1,16 +1,17 @@
 name: houses
 
-# The house layer of the power map. Slow on purpose: operators' address directories are read
-# one request at a time, a little every few hours, until every addressed building has been
-# looked up; then each address is checked again about every six weeks.
+# The house layer of the power map. Operators' address directories are read one request at a
+# time, every two hours, until every addressed building has been looked up; groups rarely change,
+# so then a found group is checked again after about two and a half months, a miss after a month.
+# The map is rebuilt after every run, so new groups show up within a couple of hours.
 on:
   schedule:
-    - cron: "17 1,7,13,19 * * *"
+    - cron: "17 */2 * * *"
   workflow_dispatch:
     inputs:
       budget:
         description: "Minutes each crawler may run"
-        default: "300"
+        default: "105"
 
 permissions:
   contents: write
@@ -78,7 +79,7 @@ jobs:
           git fetch --depth 1 origin houses-cache && git worktree add ../cache-branch FETCH_HEAD || mkdir -p ../cache-branch
           mkdir -p ../cache-branch/cache
           set -- ${{ matrix.crawlers }}
-          budget=$(( ${{ inputs.budget || 300 }} / $# ))
+          budget=$(( ${{ inputs.budget || 105 }} / $# ))
           for c in "$@"; do
             python -m houses.crawl --buildings ../osm/buildings.tsv.gz --cache ../cache-branch/cache --crawler "$c" --budget "$budget" | tee -a "$GITHUB_STEP_SUMMARY"
           done
