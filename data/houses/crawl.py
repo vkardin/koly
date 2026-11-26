@@ -55,6 +55,9 @@ CRAWLERS: dict[str, Crawler] = {c.id: c for c in [
 ]}
 
 MIN_GAP = 1.0  # seconds between requests to one directory, whatever the library allows
+# YASNO's public API serves its own app to millions of people; a few requests a second from us
+# are nothing next to that, and its directories are by far the largest (Kyiv, Dnipropetrovsk).
+GAPS = {"dtek-kem": 0.35, "dtek-dnem": 0.35, "cek": 0.5}
 # Raised whenever matching improves: addresses missed by an older matcher are looked up again.
 MATCHER = 5
 
@@ -320,7 +323,7 @@ async def crawl(crawler: Crawler, buildings: Path, cache_dir: Path, budget_s: fl
 
     started = time.monotonic()
     stats: Counter[str] = Counter()
-    gap = max(MIN_GAP, float(getattr(lookup, "request_gap", 0)))
+    gap = GAPS.get(crawler.operator) or max(MIN_GAP, float(getattr(lookup, "request_gap", 0)))
     async with aiohttp.ClientSession() as session:
         http = CachingFetcher(session, lookup.hosts, cache=ResponseCache(ttl=6 * 3600, max_bytes=64 << 20, max_entries=20_000),
                               throttle=Throttle(gap), timeout=25, user_agent=USER_AGENT)
