@@ -9,6 +9,7 @@ _REGIONS: list[tuple[str, str, str, str]] = [
     ("vinnytsia", "Вінницька", "Vinnytsia", "Винницкая"),
     ("volyn", "Волинська", "Volyn", "Волынская"),
     ("dnipropetrovsk", "Дніпропетровська", "Dnipropetrovsk", "Днепропетровская"),
+    ("dnipropetrovsk-cek", "Дніпропетровська (ЦЕК)", "Dnipropetrovsk (CEK)", "Днепропетровская (ЦЕК)"),
     ("donetsk", "Донецька", "Donetsk", "Донецкая"),
     ("zhytomyr", "Житомирська", "Zhytomyr", "Житомирская"),
     ("zakarpattia", "Закарпатська", "Zakarpattia", "Закарпатская"),
@@ -34,4 +35,6 @@ _REGIONS: list[tuple[str, str, str, str]] = [
 REGION_NAMES: dict[str, LocalizedName] = {
     rid: LocalizedName(uk=uk, en=en, ru=ru) for rid, uk, en, ru in _REGIONS
 }
+# Parts of a region served by their own operator, drawn on the map as that region.
+REGION_AREA: dict[str, str] = {"dnipropetrovsk-cek": "dnipropetrovsk"}
 REGION_ORDER: list[str] = [rid for rid, *_ in _REGIONS]

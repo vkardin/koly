@@ -1,5 +1,5 @@
 httpx==0.28.1
 pydantic==2.14.3
 tzdata==2026.6
-ukraine-energy-monitor @ git+https://github.com/fastiuk/ukraine-energy-monitor@563fcdb3c3022424e538357ca7afd8b196c27314
+ukraine-energy-monitor @ git+https://github.com/fastiuk/ukraine-energy-monitor@af18fe2dac4a0132e7e6ea8e8608b643e3640b70
 pytest==9.2.0

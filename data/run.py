@@ -65,6 +65,10 @@ def main(argv: list[str] | None = None) -> int:
     now = now_kyiv()
     only = {p for p in args.only.split(",") if p}
     providers = [p for p in all_providers() if not only or p.id in only]
+    for provider in providers:
+        bind = getattr(provider, "bind_site", None) or getattr(getattr(provider, "provider", None), "bind_site", None)
+        if bind:
+            bind(args.site)
     with ThreadPoolExecutor(max_workers=8) as pool:
         results = list(pool.map(lambda p: run_provider(p, is_due(p, args.site, now)), providers))
 
