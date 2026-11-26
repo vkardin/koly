@@ -58,8 +58,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The YASNO directories share one site: walked one after another, never in parallel.
-        crawlers: ["yasno-kem yasno-dnem yasno-cek", "loe", "ternopil", "khmelnytskyi", "mykolaiv", "zhytomyr"]
+        # One job per directory, each one request at a time. YASNO serves three of them: at most three
+        # requests a second to it in all, a small fraction of what its own app makes.
+        crawlers: ["yasno-kem", "yasno-dnem", "yasno-cek", "loe", "ternopil", "khmelnytskyi", "mykolaiv", "zhytomyr"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache/restore@v4

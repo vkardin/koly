@@ -70,15 +70,25 @@ class Places:
         self.points: list[tuple[float, float, str, str]] = []
         self.tree = None
         self.grid: dict[tuple[int, int], list[int]] = {}
+        # Street name -> its former name, from mapped streets (`old_name`), per ~10 km cell:
+        # directories are not always renamed when the street is.
+        self.old_names: dict[tuple[int, int, str], str] = {}
 
     def load(self, pbf: Path) -> None:
         from shapely import wkb
 
         factory = osmium.geom.WKBFactory()
         fp = (osmium.FileProcessor(str(pbf)).with_locations().with_areas(osmium.filter.KeyFilter("place"))
-              .with_filter(osmium.filter.KeyFilter("place")))
+              .with_filter(osmium.filter.KeyFilter("place", "old_name")))
         areas: list[tuple[float, str, object]] = []
         for obj in fp:
+            if obj.is_way() and "highway" in obj.tags and "old_name" in obj.tags:
+                name, old = _clean(obj.tags.get("name")), _clean(obj.tags.get("old_name")).split(";")[0].strip()
+                nodes = [n for n in obj.nodes if n.location.valid()]
+                if name and old and nodes:
+                    cell = (int(nodes[0].lon * 10), int(nodes[0].lat * 10))
+                    self.old_names.setdefault((*cell, name.casefold()), old)
+                continue
             place = obj.tags.get("place")
             name = _clean(obj.tags.get("name:uk") or obj.tags.get("name"))
             if place not in PLACE_KINDS or not name:
@@ -98,7 +108,16 @@ class Places:
         self.tree = STRtree(self.shapes) if self.shapes else None
         for i, (lon, lat, _, _) in enumerate(self.points):
             self.grid.setdefault((int(lon * 10), int(lat * 10)), []).append(i)
-        log.info("%d settlement areas, %d settlement points", len(self.shapes), len(self.points))
+        log.info("%d settlement areas, %d settlement points, %d former street names",
+                 len(self.shapes), len(self.points), len(self.old_names))
+
+    def old_name(self, lon: float, lat: float, street: str) -> str:
+        gx, gy = int(lon * 10), int(lat * 10)
+        for dx in (0, -1, 1):
+            for dy in (0, -1, 1):
+                if old := self.old_names.get((gx + dx, gy + dy, street.casefold())):
+                    return old
+        return ""
 
     def at(self, lon: float, lat: float) -> tuple[str, str]:
         if self.tree is not None:
@@ -160,7 +179,7 @@ class Handler(osmium.SimpleHandler):
         if key in self.seen:  # an entrance node and its building: keep one point
             return
         self.seen.add(key)
-        old = _clean(tags.get("old_addr:street"))
+        old = _clean(tags.get("old_addr:street")) or self.places.old_name(lon, lat, street)
         self.buildings.write(f"{region}\t{lon:.6f}\t{lat:.6f}\t{city}\t{how}\t{street}\t{old}\t{number}\n")
         self.count += 1
         if self.count % 200_000 == 0:

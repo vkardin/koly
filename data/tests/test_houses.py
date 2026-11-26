@@ -110,3 +110,12 @@ def test_notes_in_parentheses_are_not_part_of_the_name():
     assert best([c(1, "Хмельницький (Хмельницький РЕМ)")], "Хмельницький").id == "1"
     assert best([c(1, "Петрівка (Петриківський р-н)"), c(2, "Петрівка (Царичанський р-н)")], "Петрівка") is None
     assert best([c(1, "12 (гуртожиток)")], "12", house=True).id == "1"
+
+
+def test_ordinals_match_whatever_the_ending():
+    from houses.crawl import _bare, same_name
+
+    assert same_name("1-ша Нова вулиця", "вул. Нова 1-а")
+    assert not same_name("1-ша Нова вулиця", "вул. Нова 2-а")
+    assert _bare("1-ша Нова вулиця") == "Нова"
+    assert _bare("вулиця Кам’янецька") == "Кам’янецька"

@@ -56,7 +56,7 @@ CRAWLERS: dict[str, Crawler] = {c.id: c for c in [
 
 MIN_GAP = 1.0  # seconds between requests to one directory, whatever the library allows
 # Raised whenever matching improves: addresses missed by an older matcher are looked up again.
-MATCHER = 4
+MATCHER = 5
 
 
 @dataclass
@@ -112,6 +112,8 @@ _KINDS = {
     "місто": "", "м": "", "село": "", "с": "", "селище": "", "смт": "", "с-ще": "", "сщ": "", "хутір": "", "х": "",
 }
 _TOKEN = __import__("re").compile(r"[^\W_]+(?:['’ʼ-][^\W_]+)*")
+# "1-ша", "1-й", "2-га", "3-я": an ordinal is its number, whatever the ending.
+_ORDINAL = __import__("re").compile(r"^([0-9]{1,3})(?:-?(?:й|ий|ій|а|ша|га|тя|я|е|ге|ше|те))?$")
 
 
 _PARENS = __import__("re").compile(r"\([^()]*\)")
@@ -126,6 +128,8 @@ def _parts(text: str) -> tuple[str | None, list[str]]:
     for tok in _TOKEN.findall(fold(text).replace("’", "'").replace("ʼ", "'")):
         if tok in _KINDS:
             kind = kind or (_KINDS[tok] or None)
+        elif m := _ORDINAL.match(tok):
+            words.append(m[1])
         else:
             words.append(tok.replace("'", ""))
     return kind, words
@@ -136,7 +140,9 @@ def _bare(text: str) -> str:
     from ua_outages.providers._address import fold
 
     words = [t for t in _TOKEN.findall(_PARENS.sub(" ", text)) if fold(t).replace("’", "'").replace("ʼ", "'") not in _KINDS]
-    return " ".join(words) or text
+    # Directories spell ordinals their own way ("1-а Нова", "Нова 1-ша"): search by the other words.
+    named = [w for w in words if not _ORDINAL.match(fold(w))]
+    return " ".join(named or words) or text
 
 
 def same_name(a: str, b: str) -> bool:
