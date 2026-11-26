@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Only used when the user grants it; inexact alarms are the default. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- "Where am I" on the map; approximate is enough. Asked only when the button is pressed. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- Updating the app from its GitHub releases; the user confirms each install. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 

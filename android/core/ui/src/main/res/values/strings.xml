@@ -7,7 +7,6 @@
 
     <!-- Navigation and common actions -->
     <string name="nav_home">Головна</string>
-    <string name="nav_stats">Статистика</string>
     <string name="nav_map">Карта</string>
     <string name="map_offline">Немає з’єднання. Карта оновиться, коли з’явиться мережа.</string>
     <string name="nav_settings">Налаштування</string>
@@ -120,13 +119,6 @@
     <string name="status_region_off">немає даних</string>
 
     <!-- Statistics -->
-    <string name="stats_title">Статистика</string>
-    <string name="stats_subtitle">Години без світла за 7 днів — за графіком</string>
-    <string name="stats_total">Разом за тиждень: %1$s год</string>
-    <string name="stats_maybe">Ще %1$s год можливих відключень</string>
-    <string name="stats_no_data">Поки що немає даних. Статистика збирається з графіків, які отримав застосунок.</string>
-    <string name="stats_day_description">%1$s: %2$s год без світла за графіком</string>
-    <string name="stats_by_schedule">за графіком</string>
 
     <!-- Settings -->
     <string name="settings_title">Налаштування</string>

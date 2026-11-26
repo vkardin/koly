@@ -1,5 +1,17 @@
 # Changelog
 
+## android 1.5.0 — 2026-11-26
+
+- Map: "Where am I" button. Asks for your approximate location once and zooms to your street; without it, goes to the region of your main place.
+- Map: search by street and house number, with suggestions; picks the building and shows its group.
+- Map: "Add to my places" on a building. The place gets its region and group from the building, so you no longer need to know your group.
+- Map: time slider. See where the power will be on later today and tomorrow, in half-hour steps.
+- The Statistics tab is gone.
+
+## desktop 1.5.0 — 2026-11-26
+
+- Map: "Where am I", search by street and house number, "Add to my places" on a building, and a time slider for later today and tomorrow.
+
 ## android 1.2.0 — 2026-11-26
 
 - Buildings on the map: zoom in on a town and every addressed building is drawn, coloured by its group's schedule right now (power on, possible outage, no power, group unknown). Tap a building for its address, group, today's hours and when the power changes next. Zoomed out, the map shows regions as before.

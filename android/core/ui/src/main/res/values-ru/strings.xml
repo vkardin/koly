@@ -3,7 +3,6 @@
     <string name="app_name">Коли Є</string>
 
     <string name="nav_home">Главная</string>
-    <string name="nav_stats">Статистика</string>
     <string name="nav_map">Карта</string>
     <string name="map_offline">Нет соединения. Карта обновится, когда появится сеть.</string>
     <string name="nav_settings">Настройки</string>
@@ -107,14 +106,6 @@
     <string name="default_place_label">Дом</string>
     <string name="no_places">Добавьте место, чтобы видеть график</string>
     <string name="status_region_off">нет данных</string>
-
-    <string name="stats_title">Статистика</string>
-    <string name="stats_subtitle">Часы без света за 7 дней — по графику</string>
-    <string name="stats_total">Всего за неделю: %1$s ч</string>
-    <string name="stats_maybe">Ещё %1$s ч возможных отключений</string>
-    <string name="stats_no_data">Пока нет данных. Статистика собирается из графиков, которые получило приложение.</string>
-    <string name="stats_day_description">%1$s: %2$s ч без света по графику</string>
-    <string name="stats_by_schedule">по графику</string>
 
     <string name="settings_title">Настройки</string>
     <string name="sec_appearance">Вид</string>

@@ -1,6 +1,6 @@
 [package]
 name = "koly-widget"
-version = "1.2.0"
+version = "1.5.0"
 description = "Koly Ye desktop widget"
 authors = ["vkardin"]
 edition = "2021"

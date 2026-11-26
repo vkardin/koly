@@ -18,6 +18,10 @@ declare module "@web/powermap.js" {
     onSelect?: (id: string | null) => void;
     /** Base URL of the house tiles; without it the map shows regions only. */
     housesBase?: string;
+    /** Region to show when "Where am I" cannot get the location. */
+    home?: string | null;
+    /** Shown as a button on a building; returns false when the place could not be added. */
+    onAddPlace?: (place: { regionId: string; group: string; label: string }) => boolean | Promise<boolean>;
   }): PowerMap;
   export function loadAll(base: string, fetchImpl?: typeof fetch): Promise<{ index: IndexFile; files: Record<string, RegionFile> }>;
 }

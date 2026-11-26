@@ -11,6 +11,8 @@ const TILE_CACHE = 48;
 
 const TEXT = {
   uk: {
+    tomorrowOff: 'Завтра без світла: {t}', tomorrowNone: 'Завтра відключень за графіком немає',
+    locate: 'Де я', locating: 'Шукаю, де ви…', locateFailed: 'Не вдалося визначити місце. Дозвольте доступ до геолокації або знайдіть адресу пошуком.', search: 'Вулиця і номер будинку', searchNone: 'Нічого не знайдено', searchLoading: 'Завантажую вулиці…', addPlace: 'Додати до моїх місць', placeAdded: 'Додано до ваших місць', timeNow: 'Зараз', timeToday: 'Сьогодні {t}', timeTomorrow: 'Завтра {t}', timeLabel: 'Час на карті', youAreHere: 'Ви тут',
     noHouses: 'Будинки для цієї місцевості ще не підключено',
     houseTitle: 'Будинок', houseNoGroup: 'Група цього будинку невідома: оператор не дає її у відкритому довіднику або адресу не знайдено.', houseGroup: 'Група {g}', houseGroups: 'Групи {g}',
     nowOn: 'Зараз світло є', nowOff: 'Зараз світла немає', nowMaybe: 'Зараз можливе відключення', todayOff: 'Сьогодні без світла: {t}', todayNone: 'Сьогодні відключень за графіком немає',
@@ -28,6 +30,8 @@ const TEXT = {
     pick: 'Оберіть область на карті, щоб побачити групи.', close: 'Закрити',
   },
   en: {
+    tomorrowOff: 'Off tomorrow: {t}', tomorrowNone: 'No scheduled outages tomorrow',
+    locate: 'Where am I', locating: 'Finding where you are…', locateFailed: 'Could not find your location. Allow location access or search for your address.', search: 'Street and house number', searchNone: 'Nothing found', searchLoading: 'Loading streets…', addPlace: 'Add to my places', placeAdded: 'Added to your places', timeNow: 'Now', timeToday: 'Today {t}', timeTomorrow: 'Tomorrow {t}', timeLabel: 'Time on the map', youAreHere: 'You are here',
     noHouses: 'Buildings are not available here yet',
     houseTitle: 'Building', houseNoGroup: 'This building\'s group is unknown: the operator has no open directory or the address was not found.', houseGroup: 'Group {g}', houseGroups: 'Groups {g}',
     nowOn: 'Power is on now', nowOff: 'No power now', nowMaybe: 'Possible outage now', todayOff: 'Off today: {t}', todayNone: 'No scheduled outages today',
@@ -45,6 +49,8 @@ const TEXT = {
     pick: 'Pick a region on the map to see its groups.', close: 'Close',
   },
   ru: {
+    tomorrowOff: 'Завтра без света: {t}', tomorrowNone: 'Завтра отключений по графику нет',
+    locate: 'Где я', locating: 'Ищу, где вы…', locateFailed: 'Не удалось определить место. Разрешите доступ к геолокации или найдите адрес поиском.', search: 'Улица и номер дома', searchNone: 'Ничего не найдено', searchLoading: 'Загружаю улицы…', addPlace: 'Добавить в мои места', placeAdded: 'Добавлено в ваши места', timeNow: 'Сейчас', timeToday: 'Сегодня {t}', timeTomorrow: 'Завтра {t}', timeLabel: 'Время на карте', youAreHere: 'Вы здесь',
     noHouses: 'Дома для этой местности ещё не подключены',
     houseTitle: 'Дом', houseNoGroup: 'Группа этого дома неизвестна: оператор не даёт её в открытом справочнике или адрес не найден.', houseGroup: 'Группа {g}', houseGroups: 'Группы {g}',
     nowOn: 'Сейчас свет есть', nowOff: 'Сейчас света нет', nowMaybe: 'Сейчас возможно отключение', todayOff: 'Сегодня без света: {t}', todayNone: 'Сегодня отключений по графику нет',
@@ -169,6 +175,9 @@ export function createPowerMap(opts) {
   // Base URL of the house tiles (…/v1/houses/); without it the map shows regions only.
   const housesBase = opts.housesBase || null;
   const maxZoom = housesBase ? HOUSE_ZOOM : REGION_ZOOM;
+  // The moment the map shows: now (offset 0) or up to a day and a half ahead, in minutes.
+  let at = null;
+  const viewNow = () => kyivNow(at || new Date());
   const lang = TEXT[opts.lang] ? opts.lang : 'uk';
   const T = TEXT[lang];
   const names = { ...NAMES, ...(opts.names || {}) };
@@ -230,6 +239,7 @@ export function createPowerMap(opts) {
   btn(T.zoomIn, icon('M12 5v14M5 12h14'), () => zoomBy(1.6));
   btn(T.zoomOut, icon('M5 12h14'), () => zoomBy(1 / 1.6));
   btn(T.reset, icon('M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5'), () => animateTo(full));
+  if (housesBase) btn(T.locate, icon('M12 3v3M12 18v3M3 12h3M18 12h3M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z'), () => locate());
 
   const tip = h('div', 'pm-tip');
   tip.hidden = true;
@@ -255,7 +265,31 @@ export function createPowerMap(opts) {
   const panel = h('div', 'pm-panel');
   panel.setAttribute('aria-live', 'polite');
   const foot = h('p', 'pm-foot');
-  root.append(stage, legend, panel, foot);
+  // Address search (needs the house layer).
+  const search = h('div', 'pm-search');
+  const input = h('input');
+  input.type = 'search';
+  input.placeholder = T.search;
+  input.setAttribute('aria-label', T.search);
+  input.autocomplete = 'off';
+  const results = h('ul', 'pm-results');
+  results.hidden = true;
+  results.setAttribute('role', 'listbox');
+  search.append(input, results);
+  search.hidden = !housesBase;
+
+  // Time on the map: now, or any half hour up to tomorrow evening.
+  const timebar = h('div', 'pm-time');
+  const range = h('input');
+  range.type = 'range'; range.min = '0'; range.max = '72'; range.step = '1'; range.value = '0';
+  range.setAttribute('aria-label', T.timeLabel);
+  const timeText = h('span', 'pm-time-text', T.timeNow);
+  const nowBtn = h('button', 'pm-now-btn', T.timeNow);
+  nowBtn.type = 'button';
+  nowBtn.hidden = true;
+  timebar.append(range, timeText, nowBtn);
+
+  root.append(search, stage, timebar, legend, panel, foot);
 
   // ---- view box, zoom and pan ----
   function applyView() {
@@ -401,6 +435,7 @@ export function createPowerMap(opts) {
   });
 
   // ---- buildings: drawn on a canvas over the regions once zoomed in to a town ----
+  let me = null; // where the viewer is, in map units, once they asked
   const houses = (() => {
     const tiles = new Map(); // "tx_ty" -> tile | Promise
     let hIndex = null, indexLoading = null, frame = 0, failed = false;
@@ -485,7 +520,7 @@ export function createPowerMap(opts) {
     // What each group is doing right now, per schedule region: {region: {group: state}}.
     let states = {};
     function computeStates() {
-      const now = kyivNow();
+      const now = viewNow();
       states = {};
       for (const [rid, f] of Object.entries(files)) {
         const day = (f.days || []).find((d) => d.date === now.date);
@@ -528,6 +563,7 @@ export function createPowerMap(opts) {
       if (!on) {
         note.textContent = T.noHouses;
         note.hidden = !(active() && hIndex);
+        drawMe(ctx, tr, dpr);
         return;
       }
       if (!hIndex) {
@@ -585,6 +621,15 @@ export function createPowerMap(opts) {
         ctx.lineWidth = 2; ctx.strokeStyle = colors.on;
         ctx.strokeRect(x - half - 3, y - half - 3, size + 6, size + 6);
       }
+      drawMe(ctx, tr, dpr);
+    }
+    function drawMe(ctx, tr, dpr) {
+      if (!me) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const x = me.x * tr.s + tr.ox, y = me.y * tr.s + tr.oy;
+      ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2); ctx.fillStyle = 'rgba(74,144,255,.22)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, 5.5, 0, Math.PI * 2); ctx.fillStyle = '#4a90ff'; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = '#ffffff'; ctx.stroke();
     }
     function schedule() { if (!frame) frame = requestAnimationFrame(draw); }
 
@@ -605,19 +650,174 @@ export function createPowerMap(opts) {
         }
       }
       if (!best) return null;
-      const { t, i } = best;
-      const gi = t.g[i];
-      const set = gi >= 0 ? t.groups[gi] : null;
-      return {
-        x: t.xs[i], y: t.ys[i],
-        city: t.cities[t.c[i]], street: t.streets[t.s[i]], number: t.n[i],
-        region: set ? t.regions[set[0]] : null, groups: set ? set.slice(1) : [],
-      };
+      return houseAt(best.t, best.i);
     }
     function pick(hit) { picked = hit; schedule(); }
 
-    return { active, schedule, hitTest, pick, refresh() { readColors(); computeStates(); schedule(); }, attribution: () => hIndex && hIndex.attribution };
+    // For the address search: load the given tiles and return them unpacked.
+    async function loadTiles(keys) {
+      await loadIndex();
+      if (!hIndex) return [];
+      const out = [];
+      for (const key of keys.filter((k) => hIndex.tiles[k]).slice(0, 6)) {
+        let t = tiles.get(key);
+        if (!t) {
+          t = fetch(housesBase + key + '.json').then((r) => (r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))
+            .then((j) => { const u = unpack(j); tiles.set(key, u); return u; });
+          tiles.set(key, t);
+        }
+        try { out.push(await t); } catch { tiles.delete(key); }
+      }
+      prune();
+      return out;
+    }
+    function houseAt(t, i) {
+      const gi = t.g[i];
+      const set = gi >= 0 ? t.groups[gi] : null;
+      return { x: t.xs[i], y: t.ys[i], city: t.cities[t.c[i]], street: t.streets[t.s[i]], number: t.n[i],
+        region: set ? t.regions[set[0]] : null, groups: set ? set.slice(1) : [] };
+    }
+
+    return { active, schedule, hitTest, pick, loadTiles, houseAt, refresh() { readColors(); computeStates(); schedule(); }, attribution: () => hIndex && hIndex.attribution };
   })();
+
+  // ---- where am I ----
+  const LON0 = 22.0, LAT0 = 52.5, K = 82.0, COS = Math.cos(48.4 * Math.PI / 180);
+  const project = (lon, lat) => ({ x: (lon - LON0) * COS * K, y: (LAT0 - lat) * K });
+  let noteTimer = 0;
+  function flash(text, ms = 4000) {
+    note.textContent = text;
+    note.hidden = false;
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(() => { note.hidden = true; houses.schedule(); }, ms);
+  }
+  function centerOn(x, y, w) {
+    const hh = w * (full.h / full.w);
+    animateTo(clamp({ x: x - w / 2, y: y - hh / 2, w, h: hh }));
+  }
+  function locate() {
+    const fallback = () => {
+      flash(T.locateFailed, 6000);
+      if (opts.home) focusRegion(opts.home);
+    };
+    if (!navigator.geolocation) { fallback(); return; }
+    flash(T.locating, 15000);
+    navigator.geolocation.getCurrentPosition((pos) => {
+      me = project(pos.coords.longitude, pos.coords.latitude);
+      note.hidden = true;
+      centerOn(me.x, me.y, 3);
+      houses.schedule();
+    }, fallback, { enableHighAccuracy: false, timeout: 15000, maximumAge: 10 * 60000 });
+  }
+
+  // ---- address search ----
+  let streetIndex = null, streetLoading = null;
+  const KIND = /^(вулиця|вул|провулок|пров|проспект|просп|пр-т|бульвар|бул|площа|пл|узвіз|шосе|тупик|проїзд|набережна|улица|ул|переулок|пер|м|с|смт|місто|село)\.?$/;
+  const words = (text) => text.toLowerCase().replace(/[’ʼ`]/g, "'").split(/[\s,.()"«»]+/).filter((w) => w && !KIND.test(w));
+  const compactNum = (n) => n.toLowerCase().replace(/[\s\-.]/g, '');
+  function loadStreets() {
+    if (!streetLoading) {
+      streetLoading = fetch(housesBase + 'streets.json')
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))
+        .then((j) => {
+          streetIndex = j.items.map(([ri, city, street, keys]) => ({
+            region: j.regions[ri], city, street, keys, hay: words(street + ' ' + city).join(' '),
+          }));
+        })
+        .catch(() => { streetLoading = null; });
+    }
+    return streetLoading;
+  }
+  function parseQuery(q) {
+    const m = q.trim().match(/^(.*?)[\s,]+(\d+[\p{L}\d/\-]*)$/u);
+    return m ? { name: m[1], number: m[2] } : { name: q.trim(), number: '' };
+  }
+  let searchSeq = 0;
+  async function runSearch() {
+    const seq = ++searchSeq;
+    const q = parseQuery(input.value);
+    const ws = words(q.name);
+    if (!ws.length || ws.join('').length < 3) { results.hidden = true; return; }
+    if (!streetIndex) {
+      results.replaceChildren(h('li', 'pm-res-note', T.searchLoading));
+      results.hidden = false;
+      await loadStreets();
+      if (seq !== searchSeq) return;
+    }
+    const found = (streetIndex || []).filter((s) => ws.every((w) => s.hay.includes(w))).slice(0, 8);
+    results.replaceChildren();
+    if (!found.length) results.append(h('li', 'pm-res-note', T.searchNone));
+    for (const s of found) {
+      const li = h('li', 'pm-res');
+      li.setAttribute('role', 'option');
+      li.tabIndex = 0;
+      li.append(h('b', null, s.street + (q.number ? ', ' + q.number : '')), h('span', null, s.city || nameOf(s.region)));
+      const go = () => openStreet(s, q.number);
+      li.addEventListener('click', go);
+      li.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+      results.append(li);
+    }
+    results.hidden = false;
+  }
+  async function openStreet(s, number) {
+    results.hidden = true;
+    input.blur();
+    const loaded = await houses.loadTiles(s.keys);
+    const mine = [];
+    for (const t of loaded) {
+      for (let i = 0; i < t.xs.length; i++) {
+        if (t.streets[t.s[i]] === s.street && t.cities[t.c[i]] === s.city) mine.push([t, i]);
+      }
+    }
+    if (!mine.length) { flash(T.searchNone); return; }
+    const exact = number ? mine.find(([t, i]) => compactNum(t.n[i]) === compactNum(number)) : null;
+    if (exact) {
+      const hit = houses.houseAt(...exact);
+      centerOn(hit.x, hit.y, 1.2);
+      selectHouse(hit);
+      return;
+    }
+    // The whole street: fit it in view.
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const [t, i] of mine) { x0 = Math.min(x0, t.xs[i]); x1 = Math.max(x1, t.xs[i]); y0 = Math.min(y0, t.ys[i]); y1 = Math.max(y1, t.ys[i]); }
+    centerOn((x0 + x1) / 2, (y0 + y1) / 2, Math.max(1.2, (x1 - x0) * 1.4, (y1 - y0) * 1.4 * (full.w / full.h)));
+    if (number) flash(T.searchNone);
+  }
+  let searchTimer = 0;
+  input.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 180); });
+  input.addEventListener('focus', () => { loadStreets(); if (input.value) runSearch(); });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { results.hidden = true; }
+    else if (e.key === 'ArrowDown') { const f = results.querySelector('.pm-res'); if (f) { e.preventDefault(); f.focus(); } }
+    else if (e.key === 'Enter') { const f = results.querySelector('.pm-res'); if (f) { e.preventDefault(); f.click(); } }
+  });
+  results.addEventListener('keydown', (e) => {
+    const items = [...results.querySelectorAll('.pm-res')];
+    const i = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' && i < items.length - 1) { e.preventDefault(); items[i + 1].focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); (i > 0 ? items[i - 1] : input).focus(); }
+  });
+  document.addEventListener('pointerdown', (e) => { if (!search.contains(e.target)) results.hidden = true; });
+
+  // ---- time on the map ----
+  function setOffset(steps) {
+    // Steps of 30 minutes from the current half hour.
+    const now = kyivNow();
+    const base = now.minute - (now.minute % 30);
+    at = steps ? new Date(Date.now() + (base + steps * 30 - now.minute) * 60000) : null;
+    range.value = String(steps);
+    nowBtn.hidden = !steps;
+    root.classList.toggle('is-future', !!steps);
+    if (!steps) timeText.textContent = T.timeNow;
+    else {
+      const v = viewNow();
+      const t = hm(v.minute - (v.minute % 30));
+      timeText.textContent = fill(v.date === now.date ? T.timeToday : T.timeTomorrow, { t });
+    }
+    paint();
+  }
+  range.addEventListener('input', () => setOffset(Number(range.value)));
+  nowBtn.addEventListener('click', () => setOffset(0));
 
   // ---- tooltip and details ----
   function statusLine(id) {
@@ -658,7 +858,7 @@ export function createPowerMap(opts) {
     const checks = (file && file.checks) || [];
     const same = checks.filter((c) => c.result === 'same').map((c) => c.name);
     if (same.length) out.push(h('p', 'pm-src', fill(T.agree, { s: [...new Set(same)].join(', ') })));
-    const now = kyivNow();
+    const now = viewNow();
     for (const c of checks) {
       if (c.result !== 'different' || !c.days || !c.days.length) continue;
       const lines = [];
@@ -705,7 +905,7 @@ export function createPowerMap(opts) {
     const file = files[house.region];
     const g = house.groups.join(', ');
     panel.append(h('p', 'pm-hg', fill(house.groups.length > 1 ? T.houseGroups : T.houseGroup, { g })));
-    const now = kyivNow();
+    const now = viewNow();
     const day = file && (file.days || []).find((d) => d.date === now.date);
     if (file && file.status === 'no_schedules') { panel.append(h('p', 'pm-now', T.noOutages)); }
     else if (!day) { panel.append(h('p', 'pm-sum', T.noToday)); }
@@ -714,17 +914,32 @@ export function createPowerMap(opts) {
         const st = groupState(day.groups[grp], now.minute);
         const line = h('p', 'pm-now');
         line.dataset.state = st.state;
-        line.textContent = (house.groups.length > 1 ? grp + ': ' : '') + (st.state === 'on' ? T.nowOn : st.state === 'off' ? T.nowOff : T.nowMaybe)
+        const word = at
+          ? timeText.textContent + ': ' + (st.state === 'on' ? T.legendOn : st.state === 'off' ? T.legendOff : T.maybe)
+          : (st.state === 'on' ? T.nowOn : st.state === 'off' ? T.nowOff : T.nowMaybe);
+        line.textContent = (house.groups.length > 1 ? grp + ': ' : '') + word
           + (st.next != null ? ' · ' + fill(T.until, { t: hm(st.next) }) : '');
         panel.append(line);
         const off = day.groups[grp] || [];
-        panel.append(h('p', 'pm-sum', off.length ? fill(T.todayOff, { t: spans(off) }) : T.todayNone));
+        const later = now.date !== kyivNow().date;
+        panel.append(h('p', 'pm-sum', off.length ? fill(later ? T.tomorrowOff : T.todayOff, { t: spans(off) }) : (later ? T.tomorrowNone : T.todayNone)));
       }
     }
     if (file && file.status === 'stale') panel.append(h('p', 'pm-warn', T.stale));
     if (file && file.emergency && file.emergency.active) panel.append(h('p', 'pm-warn', T.emergency));
     panel.append(...checksFor(file, house.groups));
     if (file && file.updatedAt) panel.append(h('p', 'pm-upd', fill(T.updated, { t: kyivClock(file.updatedAt) })));
+    if (opts.onAddPlace && house.groups.length) {
+      const add = h('button', 'pm-add', T.addPlace);
+      add.type = 'button';
+      add.addEventListener('click', () => {
+        const label = [house.street, house.number].filter(Boolean).join(', ');
+        Promise.resolve(opts.onAddPlace({ regionId: house.region, group: house.groups[0], label })).then((ok) => {
+          if (ok !== false) { add.disabled = true; add.textContent = T.placeAdded; }
+        });
+      });
+      panel.append(add);
+    }
   }
 
   function renderPanel() {
@@ -757,7 +972,7 @@ export function createPowerMap(opts) {
     if (s.updatedAt) panel.append(h('p', 'pm-upd', fill(T.updated, { t: kyivClock(s.updatedAt) })));
     // Parts of the region served by another operator (CEK in Dnipropetrovsk), with their own groups.
     for (const part of ((index && index.regions) || []).filter((e) => e.area === selected)) {
-      const ps = regionSummary(part, files[part.id], kyivNow());
+      const ps = regionSummary(part, files[part.id], viewNow());
       panel.append(h('h4', 'pm-part', nameOf(part.id)));
       if (ps.kind !== 'live') { panel.append(h('p', 'pm-sum', ps.kind === 'notoday' ? T.noToday : T.noData)); continue; }
       const pl = h('ul', 'pm-groups');
@@ -788,7 +1003,7 @@ export function createPowerMap(opts) {
     if (opts.onSelect) opts.onSelect(id);
   }
 
-  function setFoot(now = kyivNow()) {
+  function setFoot(now = viewNow()) {
     const attribution = housesBase && houses.active() ? ' · ' + T.osm : '';
     foot.textContent = fill(T.asOf, { t: hm(now.minute) }) + ' · ' + T.hint + attribution;
   }
@@ -798,7 +1013,7 @@ export function createPowerMap(opts) {
   }
 
   function paint() {
-    const now = kyivNow();
+    const now = viewNow();
     const byId = {};
     for (const e of (index && index.regions) || []) byId[e.id] = e;
     for (const e of (index && index.regions) || []) if (e.name) names[e.id] = e.name;

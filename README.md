@@ -31,7 +31,7 @@ The installer is not code-signed yet. If SmartScreen warns you, click **More inf
 
 - **Region and group, not addresses.** Choose your region and outage group (`1.1`, `3.2`…) once.
 - **Up to 10 places:** home, work, parents, each with its own region and group.
-- **Power map, down to the building.** Zoomed out, every region is coloured by the share of groups with power right now. Zoom in on a town and each addressed building appears, coloured by its own group's schedule; tap one for its address, group and today's hours. On the website, in the Android app and in the widget settings.
+- **Power map, down to the building.** Zoomed out, every region is coloured by the share of groups with power right now. Zoom in on a town and each addressed building appears, coloured by its own group's schedule; tap one for its address, group and today's hours, and add it to your places in one tap. Find your house by street and number or with "Where am I", and slide the time to see later today and tomorrow. On the website, in the Android app and in the widget settings.
 - **Checked across sources.** Each schedule is compared with other open sources. When they agree, the app says so; when another source shows other hours, both are shown, each with its source and update time.
 - **Status at a glance:** power on, off or maybe off, shown by colour *and* text, with a large countdown to the next change.
 - **Today and tomorrow:** a 24-hour strip labelled with the real switch times, not an even scale.
