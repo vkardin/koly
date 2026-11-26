@@ -16,8 +16,8 @@ android {
         applicationId = "io.github.vkardin.koly"
         minSdk = 26
         targetSdk = 37
-        versionCode = 5
-        versionName = "1.5.1"
+        versionCode = 6
+        versionName = "1.6.0"
     }
 
     androidResources {
@@ -76,7 +76,10 @@ abstract class CopyMapAssets : DefaultTask() {
 }
 
 val copyMapAssets = tasks.register<CopyMapAssets>("copyMapAssets") {
-    web.from(listOf("powermap.js", "powermap.css", "ua-map.json").map { rootProject.file("../web/$it") })
+    web.from(
+        listOf("powermap.js", "powermap.css", "ua-regions.json", "vendor/maplibre-gl-5.24.1.js", "vendor/maplibre-gl-5.24.1.css")
+            .map { rootProject.file("../web/$it") },
+    )
 }
 
 androidComponents {

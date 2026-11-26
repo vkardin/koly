@@ -14,7 +14,9 @@ import { applyTheme, onSystemThemeChange } from "./core/theme";
 import { findUpdate, installAndRestart, type Update } from "./core/update";
 import { MAX_PLACES, defaultSettings, type IndexFile, type LocalizedName, type Place, type RegionFile, type Settings } from "./core/types";
 import { createPowerMap, loadAll, type PowerMap } from "@web/powermap.js";
-import geo from "@web/ua-map.json";
+import regions from "@web/ua-regions.json";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import "@web/powermap.css";
 
 type Section = "appearance" | "places" | "map" | "notifications" | "general" | "about";
@@ -310,7 +312,7 @@ async function installUpdate() {
 }
 
 // ---- Power map: every region, fetched separately from the widget's own data (which only has the regions in use).
-let powerMap: (PowerMap & { lang: string }) | null = null;
+let powerMap: (PowerMap & { lang: string; theme: "dark" | "light" }) | null = null;
 let mapData: { index: IndexFile; files: Record<string, RegionFile> } | null = null;
 let mapLoadedAt = 0;
 let mapOffline = false;
@@ -326,11 +328,13 @@ function renderMap(): string {
 function mountMap() {
   const host = app.querySelector<HTMLElement>("#map-host");
   if (!host) return;
-  if (!powerMap || powerMap.lang !== settings.lang) {
+  if (!powerMap || powerMap.lang !== settings.lang || powerMap.theme !== mapTheme()) {
     powerMap?.destroy();
     powerMap = Object.assign(
       createPowerMap({
-        geo,
+        regions,
+        maplibregl,
+        theme: mapTheme(),
         lang: settings.lang,
         housesBase: DATA_BASE_URL + "houses/",
         home: mainPlace()?.regionId ?? null,
@@ -342,12 +346,18 @@ function mountMap() {
           return true;
         },
       }),
-      { lang: settings.lang },
+      { lang: settings.lang, theme: mapTheme() },
     );
     paintMap();
   }
   host.replaceChildren(powerMap.root);
+  powerMap.resize();
   if (Date.now() - mapLoadedAt > MAP_REFRESH_MS) void loadMapData();
+}
+
+function mapTheme(): "dark" | "light" {
+  if (settings.theme === "system") return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return settings.theme === "light" ? "light" : "dark";
 }
 
 function paintMap() {

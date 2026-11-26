@@ -146,32 +146,37 @@ private fun page(
     home: String?,
 ): String {
     val homeJs = home?.takeIf { it.matches(Regex("[a-z-]{2,40}")) }?.let { "'$it'" } ?: "null"
+    // Panels follow the app theme; the map itself has a dark and a light basemap.
     val light = if (dark) "" else """
-        .pm{--pm-card:#ffffff;--pm-card2:#eef0f6;--pm-line:rgba(20,26,43,.12);--pm-sea:#e9ecf3;--pm-nodata:#c3c9d8;--pm-border:#ffffff;--pm-warn:#a8530a;--pm-h-on:#f0a818;--pm-h-maybe:#d07a1e;--pm-h-off:#3a4463;--pm-h-unknown:#d3d8e3;--pm-h-road:#ffffff}
-        .pm-label{fill:#141a2b;stroke:#ffffff}.pm-label.on-light{stroke:#ffe7b0}
-        .pm-hatch-bg{fill:#d5d9e3}.pm-hatch-line{stroke:#b4bbcb}
+        .pm{--pm-card:#ffffff;--pm-card2:#eef0f6;--pm-line:rgba(20,26,43,.12);--pm-sea:#e9ecf3;--pm-nodata:#c3c9d8;--pm-border:#ffffff;--pm-warn:#a8530a;--pm-h-on:#f0a818;--pm-h-maybe:#e0701a;--pm-h-off:#3a4ac0;--pm-h-unknown:#9aa3b5}
         .pm-g[data-state="off"]{background:#3a4463;color:#fff}
         .pm-lg-occ::before{background:repeating-linear-gradient(45deg,#d5d9e3 0 3px,#b4bbcb 3px 5px)}
     """
+    val theme = if (dark) "dark" else "light"
     return """<!doctype html><html lang="$lang"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <style>
+${asset(context, "maplibre-gl-5.24.1.css")}
 html,body{margin:0;background:${css(background)};color:${css(text)};font-family:system-ui,sans-serif;-webkit-text-size-adjust:100%}
 body{padding:12px 16px 24px}
 #off{margin:0 0 10px;font-size:13px;color:${css(muted)}}
 .pm{--pm-text:${css(text)};--pm-muted:${css(muted)}}
 ${asset(context, "powermap.css")}
+.pm-stage{aspect-ratio:auto;height:62vh}
 $light
 </style></head><body>
 <p id="off" hidden>${escapeHtml(offline)}</p><div id="map"></div>
+<script>${asset(context, "maplibre-gl-5.24.1.js")}</script>
 <script type="module">
 ${asset(context, "powermap.js")}
-const geo = ${asset(context, "ua-map.json")};
+const regions = ${asset(context, "ua-regions.json")};
 const map = createPowerMap({
-  geo, lang: document.documentElement.lang, housesBase: '${DATA_BASE}houses/', home: $homeJs,
+  regions, lang: document.documentElement.lang, theme: '$theme',
+  housesBase: '${DATA_BASE}houses/', home: $homeJs,
   onAddPlace: (p) => window.KolyApp ? KolyApp.addPlace(p.regionId, p.group, p.label) : false,
 });
 document.getElementById('map').append(map.root);
+map.resize();
 const off = document.getElementById('off');
 async function refresh() {
   try { const { index, files } = await loadAll('$DATA_BASE'); map.update(index, files); off.hidden = true; }

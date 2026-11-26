@@ -2,7 +2,7 @@
 
     python -m houses.tiles --osm out/ --cache cache/ --site ../site
 
-Tiles are squares of TILE map units (the units of web/ua-map.json, about 11 km) in
+Tiles are squares of TILE map units (an equirectangular projection scaled for latitude 48.4, about 11 km) in
 `v1/houses/<tx>_<ty>.json`, listed in `v1/houses/index.json`. A tile holds every addressed
 building in it (a point, its street and number) and, where an operator's directory gave one,
 its group; plus the streets to draw under them. Clients colour each building by its group's
