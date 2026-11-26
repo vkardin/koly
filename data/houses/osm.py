@@ -3,7 +3,7 @@
     python -m houses.osm ukraine-latest.osm.pbf out/
 
 Writes `out/buildings.tsv.gz` (region, lon, lat, city, how the city was found, street, old street
-name, number) and `out/roads.tsv.gz` (class, lon/lat pairs). Only buildings with a street and a
+name, number, outline of the building when it is mapped as one) and `out/roads.tsv.gz` (class, lon/lat pairs). Only buildings with a street and a
 house number are kept. The settlement is the `addr:city` tag; else the settlement area the building
 is in; else the nearest settlement point, but only when it is close and no other settlement is
 nearly as close. Kyiv city needs none. A building whose settlement stays unknown is kept for the
@@ -161,7 +161,7 @@ class Handler(osmium.SimpleHandler):
         self.seen: set[tuple[str, str, str]] = set()
         self.count = 0
 
-    def _address(self, tags, lon: float, lat: float) -> None:
+    def _address(self, tags, lon: float, lat: float, shape: str = "") -> None:
         number = _clean(tags.get("addr:housenumber"))
         street = _clean(tags.get("addr:street") or tags.get("addr:place"))
         if not number or not street or len(number) > 20:
@@ -180,7 +180,7 @@ class Handler(osmium.SimpleHandler):
             return
         self.seen.add(key)
         old = _clean(tags.get("old_addr:street")) or self.places.old_name(lon, lat, street)
-        self.buildings.write(f"{region}\t{lon:.6f}\t{lat:.6f}\t{city}\t{how}\t{street}\t{old}\t{number}\n")
+        self.buildings.write(f"{region}\t{lon:.6f}\t{lat:.6f}\t{city}\t{how}\t{street}\t{old}\t{number}\t{shape}\n")
         self.count += 1
         if self.count % 200_000 == 0:
             log.info("%d addresses", self.count)
@@ -198,7 +198,9 @@ class Handler(osmium.SimpleHandler):
                     pts = pts[:-1]
                 lon = sum(p[0] for p in pts) / len(pts)
                 lat = sum(p[1] for p in pts) / len(pts)
-                self._address(tags, lon, lat)
+                # The outline, so the map can fill the building itself.
+                shape = " ".join(f"{x:.6f},{y:.6f}" for x, y in pts[:200])
+                self._address(tags, lon, lat, shape)
             return
         cls = ROAD_CLASSES.get(tags.get("highway", ""))
         if cls:
@@ -214,7 +216,7 @@ def extract(pbf: Path, out: Path) -> int:
     places.load(pbf)
     with gzip.open(out / "buildings.tsv.gz", "wt", encoding="utf-8") as b, \
             gzip.open(out / "roads.tsv.gz", "wt", encoding="utf-8") as r:
-        b.write("region\tlon\tlat\tcity\tcity_from\tstreet\told_street\tnumber\n")
+        b.write("region\tlon\tlat\tcity\tcity_from\tstreet\told_street\tnumber\tshape\n")
         handler = Handler(regions, places, b, r)
         handler.apply_file(str(pbf), locations=True, idx="flex_mem")
     log.info("%d addresses in all", handler.count)

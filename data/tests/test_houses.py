@@ -76,8 +76,8 @@ def test_tiles_put_buildings_where_the_map_draws_them(tmp_path: Path):
     osm = tmp_path / "osm"
     osm.mkdir()
     with gzip.open(osm / "buildings.tsv.gz", "wt", encoding="utf-8") as f:
-        f.write("region\tlon\tlat\tcity\tcity_from\tstreet\told_street\tnumber\n")
-        f.write("lviv\t24.03\t49.84\tЛьвів\ttag\tНаукова\t\t1\n")
+        f.write("region\tlon\tlat\tcity\tcity_from\tstreet\told_street\tnumber\tshape\n")
+        f.write("lviv\t24.03\t49.84\tЛьвів\ttag\tНаукова\t\t1\t24.0299,49.8399 24.0301,49.8399 24.0301,49.8401 24.0299,49.8401\n")
     with gzip.open(osm / "roads.tsv.gz", "wt", encoding="utf-8") as f:
         f.write("")
     cache = tmp_path / "cache"
@@ -92,6 +92,7 @@ def test_tiles_put_buildings_where_the_map_draws_them(tmp_path: Path):
     tx, ty = tile["tile"]
     assert abs(tx * 8 + tile["x"][0] / 1024 - x) < 0.002 and abs(ty * 8 + tile["y"][0] / 1024 - y) < 0.002
     assert tile["regions"] == ["lviv"] and tile["groups"] == [[0, "1.2"]] and tile["g"] == [0]
+    assert isinstance(tile["p"][0], list) and len(tile["p"][0]) == 8  # four corners
     assert index["coverage"]["lviv"] == {"houses": 1, "withGroup": 1}
     streets = json.loads((tmp_path / "site/v1/houses/streets.json").read_text())
     assert streets["items"] == [[0, "Львів", "Наукова", [name]]]
