@@ -1,5 +1,7 @@
 package io.github.vkardin.koly.feature.home
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -115,6 +117,7 @@ private fun StatusCard(view: PlaceView, state: HomeState) {
                     Text(stringResource(R.string.region_stale), style = MaterialTheme.typography.bodySmall, color = c.maybeText)
                 }
                 OtherSources(view, state.now.date.toString())
+                OperatorNotes(view, state.now.date.toString())
             }
         }
     }
@@ -357,5 +360,37 @@ private fun OtherSources(view: PlaceView, date: String) {
         val text = if (time != null) stringResource(R.string.source_differs, check.name, time, list)
         else stringResource(R.string.source_differs_no_time, check.name, list)
         Text(text, style = MaterialTheme.typography.bodySmall, color = c.maybeText)
+    }
+}
+
+/** The operator's notice and its weekly "possible outages" for this group, when it publishes them. */
+@Composable
+private fun OperatorNotes(view: PlaceView, date: String) {
+    val region = view.region ?: return
+    val c = LocalKolyColors.current
+    val possible = region.possible.firstOrNull { it.date == date }?.groups?.get(view.place.group).orEmpty()
+    if (possible.isNotEmpty()) {
+        Spacer(Modifier.height(6.dp))
+        val list = possible.joinToString(", ") { it.from + "–" + it.to }
+        Text(stringResource(R.string.possible_outages, list), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+    }
+    val notice = region.notice?.takeIf { it.isNotBlank() } ?: return
+    var open by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    Spacer(Modifier.height(10.dp))
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(c.maybeText.copy(alpha = 0.10f), androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+            .clickable { open = !open }
+            .padding(10.dp),
+    ) {
+        Text(stringResource(R.string.operator_notice), style = MaterialTheme.typography.labelMedium, color = c.maybeText)
+        Text(
+            notice,
+            style = MaterialTheme.typography.bodySmall,
+            color = c.text,
+            maxLines = if (open) Int.MAX_VALUE else 3,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
     }
 }

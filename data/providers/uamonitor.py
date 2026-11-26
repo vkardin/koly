@@ -18,6 +18,8 @@ from common.models import DaySchedule, Emergency, RegionSchedule
 from common.timeutil import iso_kyiv, now_kyiv, today_kyiv
 
 from . import _mirror
+from ._checks import Checked, mirror
+from ._extras import DtekExtras, cek_groups
 
 
 def convert(schedules: dict, region_id: str, groups: tuple[str, ...], today: date) -> RegionSchedule:
@@ -146,18 +148,16 @@ class UaMonitor:
         raise ProviderError("; ".join(reasons))
 
 
-def _checked(provider_id: str, region_id: str, url: str, operator_id: str, oe_name: str | None = None):
+def _checked(provider_id: str, region_id: str, url: str, operator_id: str, oe_name: str | None = None, extras=None):
     """A library region; its open mirror (if any) is both the check and the fallback."""
-    from ._checks import Checked, mirror
-
     checks = [mirror(_mirror.oe_outage_data(oe_name), "oe-outage-data")] if oe_name else []
-    return Checked(UaMonitor(provider_id, region_id, url, operator_id), checks)
+    return Checked(UaMonitor(provider_id, region_id, url, operator_id), checks, extras)
 
 
 REGIONS: list = [
-    UaMonitor("dtek-krem", "kyiv", "https://www.dtek-krem.com.ua/ua/shutdowns",
-              mirror=_mirror.outage_data_ua("kyiv-region")),
-    _checked("cek", "dnipropetrovsk-cek", "https://cek.dp.ua", "cek"),
+    Checked(UaMonitor("dtek-krem", "kyiv", "https://www.dtek-krem.com.ua/ua/shutdowns",
+                      mirror=_mirror.outage_data_ua("kyiv-region")), [], DtekExtras("kyiv-region")),
+    _checked("cek", "dnipropetrovsk-cek", "https://cek.dp.ua", "cek", extras=DtekExtras("dnipro", cek_groups)),
     _checked("volynoblenergo", "volyn",
              "https://energy.volyn.ua/spozhyvacham/perervy-u-elektropostachanni/hrafik-vidkliuchen/", "volyn-oe"),
     _checked("zakarpattiaoblenergo", "zakarpattia",

@@ -124,6 +124,11 @@ class RegionFile(_Model):
     emergency: Emergency = Field(default_factory=Emergency)
     days: list[DaySchedule]
     checks: list[SourceCheck] = Field(default_factory=list)
+    # The operator's own notice (e.g. "emergency outages in the city, schedules do not apply").
+    notice: str | None = None
+    # The operator's weekly "possible outages" schedule for the same dates: what may happen if
+    # outages are needed, as opposed to `days`, the schedule actually in force.
+    possible: list[DaySchedule] = Field(default_factory=list)
 
     @field_validator("fetchedAt", "updatedAt")
     @classmethod
@@ -183,3 +188,5 @@ class RegionSchedule(_Model):
     emergency: Emergency = Field(default_factory=Emergency)
     no_schedules: bool = False
     checks: list[SourceCheck] = Field(default_factory=list)
+    notice: str | None = None
+    possible: list[DaySchedule] = Field(default_factory=list)

@@ -11,6 +11,7 @@ const TILE_CACHE = 48;
 
 const TEXT = {
   uk: {
+    possible: 'За тижневим графіком можливі відключення: {t}', notice: 'Повідомлення оператора',
     tomorrowOff: 'Завтра без світла: {t}', tomorrowNone: 'Завтра відключень за графіком немає',
     locate: 'Де я', locating: 'Шукаю, де ви…', locateFailed: 'Не вдалося визначити місце. Дозвольте доступ до геолокації або знайдіть адресу пошуком.', search: 'Вулиця і номер будинку', searchNone: 'Нічого не знайдено', searchLoading: 'Завантажую вулиці…', addPlace: 'Додати до моїх місць', placeAdded: 'Додано до ваших місць', timeNow: 'Зараз', timeToday: 'Сьогодні {t}', timeTomorrow: 'Завтра {t}', timeLabel: 'Час на карті', youAreHere: 'Ви тут',
     noHouses: 'Будинки для цієї місцевості ще не підключено',
@@ -30,6 +31,7 @@ const TEXT = {
     pick: 'Оберіть область на карті, щоб побачити групи.', close: 'Закрити',
   },
   en: {
+    possible: 'Possible outages by the weekly schedule: {t}', notice: 'Operator notice',
     tomorrowOff: 'Off tomorrow: {t}', tomorrowNone: 'No scheduled outages tomorrow',
     locate: 'Where am I', locating: 'Finding where you are…', locateFailed: 'Could not find your location. Allow location access or search for your address.', search: 'Street and house number', searchNone: 'Nothing found', searchLoading: 'Loading streets…', addPlace: 'Add to my places', placeAdded: 'Added to your places', timeNow: 'Now', timeToday: 'Today {t}', timeTomorrow: 'Tomorrow {t}', timeLabel: 'Time on the map', youAreHere: 'You are here',
     noHouses: 'Buildings are not available here yet',
@@ -49,6 +51,7 @@ const TEXT = {
     pick: 'Pick a region on the map to see its groups.', close: 'Close',
   },
   ru: {
+    possible: 'По недельному графику возможны отключения: {t}', notice: 'Сообщение оператора',
     tomorrowOff: 'Завтра без света: {t}', tomorrowNone: 'Завтра отключений по графику нет',
     locate: 'Где я', locating: 'Ищу, где вы…', locateFailed: 'Не удалось определить место. Разрешите доступ к геолокации или найдите адрес поиском.', search: 'Улица и номер дома', searchNone: 'Ничего не найдено', searchLoading: 'Загружаю улицы…', addPlace: 'Добавить в мои места', placeAdded: 'Добавлено в ваши места', timeNow: 'Сейчас', timeToday: 'Сегодня {t}', timeTomorrow: 'Завтра {t}', timeLabel: 'Время на карте', youAreHere: 'Вы здесь',
     noHouses: 'Дома для этой местности ещё не подключены',
@@ -888,6 +891,20 @@ export function createPowerMap(opts) {
     return out;
   }
 
+  // The operator's notice, as written, and its weekly "possible outages" for a group.
+  function noticeOf(file) {
+    if (!file || !file.notice) return [];
+    const box = h('div', 'pm-notice');
+    box.append(h('b', null, T.notice));
+    for (const line of file.notice.split('\n')) box.append(h('p', null, line));
+    return [box];
+  }
+  function possibleOf(file, group, date) {
+    const day = file && (file.possible || []).find((d) => d.date === date);
+    const list = day && day.groups[group];
+    return list && list.length ? [h('p', 'pm-sum', fill(T.possible, { t: spans(list) }))] : [];
+  }
+
   function renderHouse() {
     const head = h('div', 'pm-head');
     const addr = [house.street, house.number].filter(Boolean).join(', ');
@@ -923,10 +940,12 @@ export function createPowerMap(opts) {
         const off = day.groups[grp] || [];
         const later = now.date !== kyivNow().date;
         panel.append(h('p', 'pm-sum', off.length ? fill(later ? T.tomorrowOff : T.todayOff, { t: spans(off) }) : (later ? T.tomorrowNone : T.todayNone)));
+        panel.append(...possibleOf(file, grp, now.date));
       }
     }
     if (file && file.status === 'stale') panel.append(h('p', 'pm-warn', T.stale));
     if (file && file.emergency && file.emergency.active) panel.append(h('p', 'pm-warn', T.emergency));
+    panel.append(...noticeOf(file));
     panel.append(...checksFor(file, house.groups));
     if (file && file.updatedAt) panel.append(h('p', 'pm-upd', fill(T.updated, { t: kyivClock(file.updatedAt) })));
     if (opts.onAddPlace && house.groups.length) {
@@ -960,6 +979,7 @@ export function createPowerMap(opts) {
     if (!s || s.kind !== 'live') return;
     if (s.emergency) panel.append(h('p', 'pm-warn', T.emergency));
     if (s.status === 'stale') panel.append(h('p', 'pm-warn', T.stale));
+    panel.append(...noticeOf(files[selected]));
     const ul = h('ul', 'pm-groups');
     for (const g of s.groups) {
       const li = h('li', 'pm-g');

@@ -109,6 +109,10 @@ data class RegionFile(
     val emergency: Emergency = Emergency(),
     val days: List<DaySchedule> = emptyList(),
     val checks: List<SourceCheck> = emptyList(),
+    /** The operator's own notice, word for word. */
+    val notice: String? = null,
+    /** The operator's weekly "possible outages" for the same dates. */
+    val possible: List<DaySchedule> = emptyList(),
 ) {
     fun isValidFor(expectedId: String): Boolean = id == expectedId
 

@@ -110,3 +110,21 @@ def test_end_of_day_spellings_agree():
     a = sched(day(T, **{"1_1": [("20:00", "24:00")]}))
     b = sched(day(T, **{"1_1": [("20:00", "23:59")]}))
     assert compare(a, b, T)[0] == "same"
+
+
+def test_dtek_notice_and_possible_schedule():
+    from datetime import date
+
+    from providers._extras import _notice, _possible, cek_groups, dtek_groups
+
+    week = {str(h): ("no" if h <= 2 else "mfirst" if h == 3 else "yes") for h in range(1, 25)}
+    payload = {
+        "attention": {"text": "<p>Екстрені відключення.</p>\\nГрафіки   не діють."},
+        "preset": {"data": {"GPV2.2": {str(d): week for d in range(1, 8)}, "GPV1003.1": {str(d): week for d in range(1, 8)}}},
+    }
+    assert _notice(payload) == "Екстрені відключення.\\nГрафіки не діють." or _notice(payload).startswith("Екстрені")
+    days = _possible(payload, dtek_groups, date(2026, 11, 26))
+    assert [d.date for d in days] == ["2026-11-26", "2026-11-27"]
+    assert list(days[0].groups) == ["2.2"]
+    assert [(i.from_, i.to, i.type) for i in days[0].groups["2.2"]] == [("00:00", "02:00", "off"), ("02:00", "02:30", "maybe")]
+    assert list(_possible(payload, cek_groups, date(2026, 11, 26))[0].groups) == ["3.1"]

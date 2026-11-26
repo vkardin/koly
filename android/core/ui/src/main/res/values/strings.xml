@@ -271,4 +271,6 @@
     <string name="source_differs">%1$s показує інакше (оновлено о %2$s): %3$s</string>
     <string name="source_differs_no_time">%1$s показує інакше: %2$s</string>
     <string name="source_no_outages">без відключень</string>
+    <string name="possible_outages">За тижневим графіком можливі відключення: %1$s</string>
+    <string name="operator_notice">Повідомлення оператора</string>
 </resources>

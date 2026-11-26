@@ -103,3 +103,6 @@
 .pm-now-btn[hidden]{display:none}
 .pm-add{margin-top:12px;border:0;border-radius:12px;padding:9px 14px;background:var(--pm-amber);color:#141a2b;font:inherit;font-weight:600;cursor:pointer}
 .pm-add:disabled{opacity:.7;cursor:default}
+.pm-notice{margin-top:10px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--pm-warn) 12%,transparent);border:1px solid color-mix(in srgb,var(--pm-warn) 35%,transparent);font-size:13px;display:grid;gap:4px}
+.pm-notice b{color:var(--pm-warn);font-size:12.5px}
+.pm-notice p{margin:0!important}
