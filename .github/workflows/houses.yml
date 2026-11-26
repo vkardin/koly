@@ -6,8 +6,6 @@ name: houses
 on:
   schedule:
     - cron: "17 1,7,13,19 * * *"
-  push:
-    branches: [feat/house-map]  # TEMP: trial runs before merge
   workflow_dispatch:
     inputs:
       budget:
@@ -80,7 +78,7 @@ jobs:
           git fetch --depth 1 origin houses-cache && git worktree add ../cache-branch FETCH_HEAD || mkdir -p ../cache-branch
           mkdir -p ../cache-branch/cache
           set -- ${{ matrix.crawlers }}
-          budget=$(( ${{ inputs.budget || (github.event_name == 'push' && 15) || 300 }} / $# + 1 ))
+          budget=$(( ${{ inputs.budget || 300 }} / $# ))
           for c in "$@"; do
             python -m houses.crawl --buildings ../osm/buildings.tsv.gz --cache ../cache-branch/cache --crawler "$c" --budget "$budget" | tee -a "$GITHUB_STEP_SUMMARY"
           done

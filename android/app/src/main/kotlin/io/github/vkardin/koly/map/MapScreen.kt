@@ -77,7 +77,7 @@ private fun page(
     context: Context, lang: String, dark: Boolean, background: Color, text: Color, muted: Color, offline: String,
 ): String {
     val light = if (dark) "" else """
-        .pm{--pm-card:#ffffff;--pm-card2:#eef0f6;--pm-line:rgba(20,26,43,.12);--pm-sea:#e9ecf3;--pm-nodata:#c3c9d8;--pm-border:#ffffff;--pm-warn:#a8530a;--pm-h-on:#f0a818;--pm-h-maybe:#c98a2c;--pm-h-off:#3a4463;--pm-h-unknown:#c3c9d8;--pm-h-road:#ffffff}
+        .pm{--pm-card:#ffffff;--pm-card2:#eef0f6;--pm-line:rgba(20,26,43,.12);--pm-sea:#e9ecf3;--pm-nodata:#c3c9d8;--pm-border:#ffffff;--pm-warn:#a8530a;--pm-h-on:#f0a818;--pm-h-maybe:#d07a1e;--pm-h-off:#3a4463;--pm-h-unknown:#d3d8e3;--pm-h-road:#ffffff}
         .pm-label{fill:#141a2b;stroke:#ffffff}.pm-label.on-light{stroke:#ffe7b0}
         .pm-hatch-bg{fill:#d5d9e3}.pm-hatch-line{stroke:#b4bbcb}
         .pm-g[data-state="off"]{background:#3a4463;color:#fff}

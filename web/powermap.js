@@ -575,7 +575,8 @@ export function createPowerMap(opts) {
           const gi = t.g[i];
           let st = stateCache.get(gi);
           if (st === undefined) { st = stateOf(t, gi); stateCache.set(gi, st); }
-          paths[st].rect(x - half, y - half, size, size);
+          if (st === 'unknown') paths[st].rect(x - half * 0.7, y - half * 0.7, size * 0.7, size * 0.7);
+          else paths[st].rect(x - half, y - half, size, size);
         }
       }
       for (const k of ['unknown', 'on', 'maybe', 'off']) { ctx.fillStyle = colors[k]; ctx.fill(paths[k]); }
