@@ -492,6 +492,8 @@ export function createPowerMap(opts) {
         const gi = t.g[i];
         let s = cache.get(gi);
         if (s === undefined) { s = stateOf(t, gi, now); cache.set(gi, s); }
+        // Zoomed out, a dot for every unknown building is only noise: those wait for street level.
+        if (!shapes && s === 'unknown') continue;
         const p = shapes && t.p ? t.p[i] : 0;
         let geometry;
         if (p && p.length >= 6) {
