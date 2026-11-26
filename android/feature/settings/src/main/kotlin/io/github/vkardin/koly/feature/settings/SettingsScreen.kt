@@ -23,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -53,6 +54,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.vkardin.koly.core.data.AppInfo
+import io.github.vkardin.koly.core.data.AppUpdater
+import io.github.vkardin.koly.core.data.UpdateState
 import io.github.vkardin.koly.core.data.DataSnapshot
 import io.github.vkardin.koly.core.data.ScheduleRepository
 import io.github.vkardin.koly.core.data.SettingsRepository
@@ -94,7 +97,11 @@ class SettingsViewModel @Inject constructor(
     private val schedules: ScheduleRepository,
     private val sync: SyncTrigger,
     val appInfo: AppInfo,
+    val updater: AppUpdater,
 ) : ViewModel() {
+    fun checkUpdate() = viewModelScope.launch { updater.check(force = true) }
+    fun installUpdate() = viewModelScope.launch { updater.install() }
+
     private val refreshing = MutableStateFlow(false)
 
     val state: StateFlow<SettingsState> = combine(settings.settings, schedules.snapshot, refreshing) { s, snap, busy ->
@@ -280,6 +287,8 @@ fun SettingsScreen(
                 }
             }
             Spacer(Modifier.height(12.dp))
+            UpdateBlock(viewModel)
+            Spacer(Modifier.height(12.dp))
             Text(stringResource(R.string.disclaimer_title), style = MaterialTheme.typography.titleSmall)
             Text(stringResource(R.string.disclaimer_text), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
             Spacer(Modifier.height(8.dp))
@@ -364,4 +373,59 @@ private fun LinkRow(text: String, onClick: () -> Unit) {
         Icon(painterResource(R.drawable.ic_open), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
     }
     HorizontalDivider(color = LocalKolyColors.current.track)
+}
+
+/** Updates from the project's releases: check, download with progress, hand over to the system installer. */
+@Composable
+private fun UpdateBlock(viewModel: SettingsViewModel) {
+    val ctx = LocalContext.current
+    val c = LocalKolyColors.current
+    if (!viewModel.updater.supported) {
+        Text(stringResource(R.string.update_store), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+        return
+    }
+    val update by viewModel.updater.state.collectAsStateWithLifecycle()
+    val text = when (val u = update) {
+        UpdateState.Idle -> null
+        UpdateState.Checking -> stringResource(R.string.update_checking)
+        UpdateState.UpToDate -> stringResource(R.string.update_up_to_date)
+        is UpdateState.Available -> stringResource(R.string.update_available, u.version) +
+            " · " + android.text.format.Formatter.formatShortFileSize(ctx, u.sizeBytes)
+        is UpdateState.Downloading -> stringResource(R.string.update_downloading, u.version, (u.progress * 100).toInt())
+        is UpdateState.NeedsPermission -> stringResource(R.string.update_permission)
+        is UpdateState.Installing -> stringResource(R.string.update_installing, u.version)
+        is UpdateState.Failed -> stringResource(R.string.update_failed, u.reason)
+    }
+    if (text != null) {
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = if (update is UpdateState.Failed) c.emergency else c.textSecondary)
+        Spacer(Modifier.height(8.dp))
+    }
+    if (update is UpdateState.Downloading) {
+        androidx.compose.material3.LinearProgressIndicator(
+            progress = { (update as UpdateState.Downloading).progress },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(8.dp))
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        when (update) {
+            is UpdateState.Available, is UpdateState.Failed -> {
+                if (update is UpdateState.Available) {
+                    Button(onClick = viewModel::installUpdate) { Text(stringResource(R.string.update_install)) }
+                }
+                OutlinedButton(onClick = viewModel::checkUpdate) { Text(stringResource(R.string.update_check)) }
+            }
+            is UpdateState.NeedsPermission -> {
+                Button(onClick = {
+                    ctx.startActivity(
+                        Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + ctx.packageName))
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                    )
+                }) { Text(stringResource(R.string.update_permission_button)) }
+                OutlinedButton(onClick = viewModel::installUpdate) { Text(stringResource(R.string.update_install)) }
+            }
+            UpdateState.Checking, is UpdateState.Downloading, is UpdateState.Installing -> Unit
+            else -> OutlinedButton(onClick = viewModel::checkUpdate) { Text(stringResource(R.string.update_check)) }
+        }
+    }
 }

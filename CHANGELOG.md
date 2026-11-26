@@ -1,5 +1,18 @@
 # Changelog
 
+## android 1.2.0 — 2026-11-26
+
+- Buildings on the map: zoom in on a town and every addressed building is drawn, coloured by its group's schedule right now (power on, possible outage, no power, group unknown). Tap a building for its address, group, today's hours and when the power changes next. Zoomed out, the map shows regions as before.
+- Schedules are checked against other sources: where they agree the app says so; where another source shows other hours, both are shown with the source and its update time.
+- Dnipropetrovsk: the part served by CEK, with its own groups.
+- Built-in updates: the app checks its GitHub releases, downloads a new version, checks it and hands it to the system installer.
+
+## desktop 1.2.0 — 2026-11-26
+
+- Buildings on the map: zoom in on a town to see every addressed building coloured by its group's schedule; click one for its address, group and today's hours.
+- Schedules are checked against other sources; differences are shown with the source.
+- Dnipropetrovsk: the part served by CEK, with its own groups.
+
 ## android 1.1.0 — 2026-11-16
 
 - Power map: a new Map tab with every region coloured by the share of groups with power right now. Pinch to zoom, drag to move, tap a region for its groups.

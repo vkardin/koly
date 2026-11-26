@@ -4,6 +4,7 @@
   --pm-card:var(--k-card,#171e30);--pm-card2:var(--k-card2,#1e263b);--pm-line:var(--k-line,#273049);
   --pm-text:var(--k-text,#f4f6fb);--pm-muted:var(--k-muted,#aeb6ca);--pm-amber:#ffc24a;--pm-warn:var(--k-warn,#ffb35c);
   --pm-sea:var(--pm-card);--pm-border:#0f1422;--pm-nodata:#323a52;
+  --pm-h-on:#ffc24a;--pm-h-maybe:#c8913a;--pm-h-off:#5a6584;--pm-h-unknown:#4a5268;--pm-h-road:#2c3550;
   display:grid;gap:12px;color:var(--pm-text)
 }
 .pm-stage{position:relative;border:1px solid var(--pm-line);border-radius:20px;overflow:hidden;background:var(--pm-sea);touch-action:none;aspect-ratio:1000/690;min-height:220px}
@@ -55,3 +56,27 @@
 .pm-foot{margin:0;font-size:12px;color:var(--pm-muted)}
 @media (prefers-reduced-motion:reduce){.pm-region{transition:none}}
 .pm-labels.is-hidden{display:none}
+
+/* Buildings, drawn on a canvas once zoomed in to a town. */
+.pm-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pm.is-houses .pm-region{fill:var(--pm-sea)!important;stroke:var(--pm-line)}
+.pm.is-houses .pm-region:not(.is-occupied):hover{filter:none}
+.pm.is-houses .pm-labels{display:none}
+.pm-note{position:absolute;left:10px;bottom:10px;padding:5px 10px;border-radius:10px;font-size:12px;background:color-mix(in srgb,var(--pm-card2) 92%,transparent);border:1px solid var(--pm-line);color:var(--pm-muted);pointer-events:none}
+.pm-note[hidden]{display:none}
+.pm-lg-houses{display:inline-flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.pm-lg-houses[hidden],.pm-legend [hidden]{display:none}
+.pm-hl-on::before,.pm-hl-off::before,.pm-hl-maybe::before,.pm-hl-unknown::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;background:var(--pm-h-on)}
+.pm-hl-off::before{background:var(--pm-h-off)}
+.pm-hl-maybe::before{background:var(--pm-h-maybe)}
+.pm-hl-unknown::before{background:var(--pm-h-unknown)}
+.pm-hg{margin-top:8px!important;font-size:15px;font-weight:600}
+.pm-now{margin-top:6px!important;font-size:14px;font-weight:600}
+.pm-now[data-state="on"]{color:var(--pm-amber)}
+.pm-now[data-state="maybe"]{color:var(--pm-warn)}
+.pm-part{margin:16px 0 0;font-size:15px}
+.pm-src{margin-top:10px!important;font-size:12px;color:var(--pm-muted)}
+.pm-alt{margin-top:10px;padding:9px 11px;border-radius:12px;border:1px dashed var(--pm-line);font-size:13px}
+.pm-alt p{color:var(--pm-muted)}
+.pm-alt a{color:inherit}
+.pm-alt ul{margin:6px 0 0;padding:0 0 0 16px;display:grid;gap:2px}

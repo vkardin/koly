@@ -4,10 +4,17 @@
 // published schedule files (/koly/v1/index.json and regions/<id>.json).
 
 const SVG = 'http://www.w3.org/2000/svg';
-const MAX_ZOOM = 7;
+const REGION_ZOOM = 7; // the whole country down to a region
+const HOUSE_ZOOM = 1500; // down to a street (~1 km across)
+const HOUSES_BELOW = 30; // view width in map units (~40 km) under which buildings are drawn
+const TILE_CACHE = 48;
 
 const TEXT = {
   uk: {
+    houseTitle: 'Будинок', houseNoGroup: 'Група цього будинку невідома: оператор не дає її у відкритому довіднику або адресу не знайдено.', houseGroup: 'Група {g}', houseGroups: 'Групи {g}',
+    nowOn: 'Зараз світло є', nowOff: 'Зараз світла немає', nowMaybe: 'Зараз можливе відключення', todayOff: 'Сьогодні без світла: {t}', todayNone: 'Сьогодні відключень за графіком немає',
+    legendHouses: 'будинки:', legendUnknown: 'група невідома', osm: '© учасники OpenStreetMap', zoomHouses: 'Наблизьте, щоб побачити будинки.',
+    agree: 'Збігається з: {s}', differs: '{s} показує інакше (оновлено {t}):', differsNoTime: '{s} показує інакше:', tomorrow: 'завтра', loadingHouses: 'Завантажую будинки…', parts: 'Частину області обслуговує {n}',
     noSource: 'Оператор не публікує графік у відкритому доступі. Дивіться сайт свого обленерго.',
     title: 'Карта світла', zoomIn: 'Наблизити', zoomOut: 'Віддалити', reset: 'Уся країна',
     legendOn: 'світло є', legendOff: 'світла немає', legendNoData: 'немає графіка', legendOccupied: 'тимчасово окупована',
@@ -16,10 +23,14 @@ const TEXT = {
     noToday: 'На сьогодні графік ще не опубліковано', occupied: 'Тимчасово окупована територія',
     stale: 'Дані можуть бути застарілими', emergency: 'Діють аварійні відключення',
     until: 'до {t}', on: 'є', off: 'немає', maybe: 'можливо', updated: 'Оновлено о {t}', asOf: 'Станом на {t} за Києвом',
-    hint: 'Колесо миші або щипок: масштаб. Перетягуйте, щоб рухати карту. Натисніть на область.',
+    hint: 'Колесо миші або щипок: масштаб. Наблизьте до міста, щоб побачити будинки. Натисніть на область або будинок.',
     pick: 'Оберіть область на карті, щоб побачити групи.', close: 'Закрити',
   },
   en: {
+    houseTitle: 'Building', houseNoGroup: 'This building\'s group is unknown: the operator has no open directory or the address was not found.', houseGroup: 'Group {g}', houseGroups: 'Groups {g}',
+    nowOn: 'Power is on now', nowOff: 'No power now', nowMaybe: 'Possible outage now', todayOff: 'Off today: {t}', todayNone: 'No scheduled outages today',
+    legendHouses: 'buildings:', legendUnknown: 'group unknown', osm: '© OpenStreetMap contributors', zoomHouses: 'Zoom in to see buildings.',
+    agree: 'Matches: {s}', differs: '{s} shows something else (updated {t}):', differsNoTime: '{s} shows something else:', tomorrow: 'tomorrow', loadingHouses: 'Loading buildings…', parts: 'Part of the region is served by {n}',
     noSource: 'The operator does not publish an open schedule. Check your supplier\'s website.',
     title: 'Power map', zoomIn: 'Zoom in', zoomOut: 'Zoom out', reset: 'Whole country',
     legendOn: 'power on', legendOff: 'no power', legendNoData: 'no schedule', legendOccupied: 'temporarily occupied',
@@ -28,10 +39,14 @@ const TEXT = {
     noToday: "Today's schedule is not published yet", occupied: 'Temporarily occupied territory',
     stale: 'Data may be out of date', emergency: 'Emergency outages are in effect',
     until: 'until {t}', on: 'on', off: 'off', maybe: 'maybe', updated: 'Updated at {t}', asOf: 'As of {t} Kyiv time',
-    hint: 'Scroll or pinch to zoom. Drag to move the map. Tap a region.',
+    hint: 'Scroll or pinch to zoom. Zoom in on a town to see buildings. Tap a region or a building.',
     pick: 'Pick a region on the map to see its groups.', close: 'Close',
   },
   ru: {
+    houseTitle: 'Дом', houseNoGroup: 'Группа этого дома неизвестна: оператор не даёт её в открытом справочнике или адрес не найден.', houseGroup: 'Группа {g}', houseGroups: 'Группы {g}',
+    nowOn: 'Сейчас свет есть', nowOff: 'Сейчас света нет', nowMaybe: 'Сейчас возможно отключение', todayOff: 'Сегодня без света: {t}', todayNone: 'Сегодня отключений по графику нет',
+    legendHouses: 'дома:', legendUnknown: 'группа неизвестна', osm: '© участники OpenStreetMap', zoomHouses: 'Приблизьте, чтобы увидеть дома.',
+    agree: 'Совпадает с: {s}', differs: '{s} показывает иначе (обновлено {t}):', differsNoTime: '{s} показывает иначе:', tomorrow: 'завтра', loadingHouses: 'Загружаю дома…', parts: 'Часть области обслуживает {n}',
     noSource: 'Оператор не публикует график в открытом доступе. Смотрите сайт своего облэнерго.',
     title: 'Карта света', zoomIn: 'Приблизить', zoomOut: 'Отдалить', reset: 'Вся страна',
     legendOn: 'свет есть', legendOff: 'света нет', legendNoData: 'нет графика', legendOccupied: 'временно оккупирована',
@@ -40,7 +55,7 @@ const TEXT = {
     noToday: 'На сегодня график ещё не опубликован', occupied: 'Временно оккупированная территория',
     stale: 'Данные могут быть устаревшими', emergency: 'Действуют аварийные отключения',
     until: 'до {t}', on: 'есть', off: 'нет', maybe: 'возможно', updated: 'Обновлено в {t}', asOf: 'По состоянию на {t} по Киеву',
-    hint: 'Колесо мыши или щипок: масштаб. Перетаскивайте, чтобы двигать карту. Нажмите на область.',
+    hint: 'Колесо мыши или щипок: масштаб. Приблизьте к городу, чтобы увидеть дома. Нажмите на область или дом.',
     pick: 'Выберите область на карте, чтобы увидеть группы.', close: 'Закрыть',
   },
 };
@@ -148,6 +163,9 @@ function h(tag, cls, text) {
  */
 export function createPowerMap(opts) {
   const { geo } = opts;
+  // Base URL of the house tiles (…/v1/houses/); without it the map shows regions only.
+  const housesBase = opts.housesBase || null;
+  const maxZoom = housesBase ? HOUSE_ZOOM : REGION_ZOOM;
   const lang = TEXT[opts.lang] ? opts.lang : 'uk';
   const T = TEXT[lang];
   const names = { ...NAMES, ...(opts.names || {}) };
@@ -212,14 +230,24 @@ export function createPowerMap(opts) {
 
   const tip = h('div', 'pm-tip');
   tip.hidden = true;
-  stage.append(svg, controls, tip);
+  const canvas = h('canvas', 'pm-canvas');
+  canvas.setAttribute('aria-hidden', 'true');
+  const note = h('div', 'pm-note');
+  note.hidden = true;
+  stage.append(svg, canvas, controls, tip, note);
 
   const legend = h('div', 'pm-legend');
   const ramp = h('span', 'pm-ramp');
   for (const c of [...RAMP].reverse()) { const s = h('i'); s.style.background = c; ramp.append(s); }
   const lgOn = h('span', 'pm-lg', T.legendOn), lgOff = h('span', 'pm-lg', T.legendOff);
   const lgNo = h('span', 'pm-lg pm-lg-nodata', T.legendNoData), lgOcc = h('span', 'pm-lg pm-lg-occ', T.legendOccupied);
-  legend.append(lgOn, ramp, lgOff, lgNo, lgOcc);
+  const lgHouses = h('span', 'pm-lg-houses');
+  lgHouses.hidden = true;
+  for (const [cls, text] of [['', T.legendHouses], ['on', T.legendOn], ['maybe', T.maybe], ['off', T.legendOff], ['unknown', T.legendUnknown]]) {
+    const item = h('span', cls ? 'pm-hl pm-hl-' + cls : 'pm-hl', text);
+    lgHouses.append(item);
+  }
+  legend.append(lgOn, ramp, lgOff, lgNo, lgOcc, lgHouses);
 
   const panel = h('div', 'pm-panel');
   panel.setAttribute('aria-live', 'polite');
@@ -235,9 +263,10 @@ export function createPowerMap(opts) {
     labels.setAttribute('font-size', String(12 / s));
     labels.classList.toggle('is-hidden', s < 0.55);
     labels.classList.toggle('is-zoomed', s > 1.9);
+    houses.schedule();
   }
   function clamp(v) {
-    const w = Math.min(full.w, Math.max(full.w / MAX_ZOOM, v.w));
+    const w = Math.min(full.w, Math.max(full.w / maxZoom, v.w));
     const hh = w * (full.h / full.w);
     const x = Math.min(full.x + full.w - w * 0.3, Math.max(full.x - w * 0.7, v.x));
     const y = Math.min(full.y + full.h - hh * 0.3, Math.max(full.y - hh * 0.7, v.y));
@@ -251,14 +280,14 @@ export function createPowerMap(opts) {
     return { x: view.x + (clientX - ox) / s, y: view.y + (clientY - oy) / s, s };
   }
   function zoomAt(factor, cx, cy) {
-    const w = Math.min(full.w, Math.max(full.w / MAX_ZOOM, view.w / factor));
+    const w = Math.min(full.w, Math.max(full.w / maxZoom, view.w / factor));
     const f = w / view.w;
     view = clamp({ x: cx - (cx - view.x) * f, y: cy - (cy - view.y) * f, w, h: w * (full.h / full.w) });
     applyView();
   }
   function zoomBy(factor) {
     const target = { ...view };
-    const w = Math.min(full.w, Math.max(full.w / MAX_ZOOM, view.w / factor));
+    const w = Math.min(full.w, Math.max(full.w / maxZoom, view.w / factor));
     const cx = view.x + view.w / 2, cy = view.y + view.h / 2;
     target.w = w; target.h = w * (full.h / full.w); target.x = cx - w / 2; target.y = cy - target.h / 2;
     animateTo(clamp(target));
@@ -282,7 +311,7 @@ export function createPowerMap(opts) {
     const p = paths[id];
     if (!p) return;
     const b = p.getBBox();
-    const w = Math.max(full.w / MAX_ZOOM, Math.max(b.width, b.height * (full.w / full.h)) * 2.4);
+    const w = Math.max(full.w / REGION_ZOOM, Math.max(b.width, b.height * (full.w / full.h)) * 2.4);
     const hh = w * (full.h / full.w);
     animateTo(clamp({ x: b.x + b.width / 2 - w / 2, y: b.y + b.height / 2 - hh / 2, w, h: hh }));
   }
@@ -335,11 +364,15 @@ export function createPowerMap(opts) {
     if (pointers.size < 2) pinch = null;
     if (!pointers.size) {
       svg.classList.remove('is-dragging');
+      if (!moved && e.type === 'pointerup' && houses.active()) {
+        const hit = houses.hitTest(e.clientX, e.clientY);
+        if (hit) { selectHouse(hit); drag = null; return; }
+      }
       if (!moved && e.type === 'pointerup') {
         const target = document.elementFromPoint(e.clientX, e.clientY);
         const id = target && target.closest && target.closest('.pm-region:not(.is-occupied)') ? target.getAttribute('data-id') : null;
         const occ = target && target.classList && target.classList.contains('is-occupied') ? target.getAttribute('data-id') : null;
-        if (id || occ) select(id || occ, true);
+        if (id || occ) select(id || occ, !houses.active());
       }
       drag = null;
     }
@@ -363,6 +396,219 @@ export function createPowerMap(opts) {
     else if (e.key === '-' || e.key === '_') { zoomBy(1 / 1.6); e.preventDefault(); }
     else if (e.key === '0') { animateTo(full); e.preventDefault(); }
   });
+
+  // ---- buildings: drawn on a canvas over the regions once zoomed in to a town ----
+  const houses = (() => {
+    const tiles = new Map(); // "tx_ty" -> tile | Promise
+    let hIndex = null, indexLoading = null, frame = 0, failed = false;
+    const colors = {};
+    const readColors = () => {
+      const cs = getComputedStyle(root);
+      for (const k of ['on', 'off', 'maybe', 'unknown', 'road']) colors[k] = cs.getPropertyValue('--pm-h-' + k).trim() || '#888';
+    };
+    const active = () => !!housesBase && view.w < HOUSES_BELOW;
+
+    function loadIndex() {
+      if (!indexLoading) {
+        indexLoading = fetch(housesBase + 'index.json', { cache: 'no-cache' })
+          .then((r) => (r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))
+          .then((j) => { hIndex = j; schedule(); })
+          .catch(() => { failed = true; indexLoading = null; });
+      }
+      return indexLoading;
+    }
+
+    // Unpacks a tile into absolute map units once, so drawing is a plain loop.
+    function unpack(t) {
+      const size = hIndex.tileSize, q = hIndex.q, qr = hIndex.qRoads;
+      const ox = t.tile[0] * size, oy = t.tile[1] * size;
+      const n = t.x.length;
+      const xs = new Float64Array(n), ys = new Float64Array(n);
+      let x = 0, y = 0;
+      for (let i = 0; i < n; i++) { x += t.x[i]; y += t.y[i]; xs[i] = ox + x / q; ys[i] = oy + y / q; }
+      const roads = t.roads.map((r) => {
+        const pts = new Float64Array(r.length - 1);
+        let px = r[1], py = r[2];
+        pts[0] = ox + px / qr; pts[1] = oy + py / qr;
+        for (let i = 3, j = 2; i + 1 < r.length; i += 2, j += 2) { px += r[i]; py += r[i + 1]; pts[j] = ox + px / qr; pts[j + 1] = oy + py / qr; }
+        return { cls: r[0], pts };
+      });
+      return { ...t, xs, ys, roadsAbs: roads, used: performance.now() };
+    }
+
+    function wanted() {
+      if (!hIndex) return [];
+      const size = hIndex.tileSize;
+      const out = [];
+      for (let tx = Math.floor(view.x / size); tx <= Math.floor((view.x + view.w) / size); tx++) {
+        for (let ty = Math.floor(view.y / size); ty <= Math.floor((view.y + view.h) / size); ty++) {
+          const key = tx + '_' + ty;
+          if (hIndex.tiles[key]) out.push(key);
+        }
+      }
+      return out;
+    }
+
+    function ensure(keys) {
+      let loading = 0;
+      for (const key of keys) {
+        const t = tiles.get(key);
+        if (t && !(t instanceof Promise)) { t.used = performance.now(); continue; }
+        if (t) { loading++; continue; }
+        if (loading >= 4) break; // a few at a time; the rest on the next frame
+        loading++;
+        const p = fetch(housesBase + key + '.json')
+          .then((r) => (r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))
+          .then((j) => { tiles.set(key, unpack(j)); prune(); schedule(); })
+          .catch(() => { tiles.delete(key); });
+        tiles.set(key, p);
+      }
+      return loading;
+    }
+    function prune() {
+      const done = [...tiles.entries()].filter(([, t]) => !(t instanceof Promise));
+      if (done.length <= TILE_CACHE) return;
+      done.sort((a, b) => a[1].used - b[1].used);
+      for (const [k] of done.slice(0, done.length - TILE_CACHE)) tiles.delete(k);
+    }
+
+    // Screen transform: map units -> CSS pixels inside the stage.
+    function transform() {
+      const r = svg.getBoundingClientRect();
+      const s = Math.min(r.width / view.w, r.height / view.h);
+      return { s, ox: (r.width - view.w * s) / 2 - view.x * s, oy: (r.height - view.h * s) / 2 - view.y * s, w: r.width, h: r.height };
+    }
+
+    // What each group is doing right now, per schedule region: {region: {group: state}}.
+    let states = {};
+    function computeStates() {
+      const now = kyivNow();
+      states = {};
+      for (const [rid, f] of Object.entries(files)) {
+        const day = (f.days || []).find((d) => d.date === now.date);
+        const noSched = f.status === 'no_schedules';
+        states[rid] = { day, noSched, minute: now.minute };
+      }
+    }
+    function stateOf(t, gi) {
+      if (gi < 0) return 'unknown';
+      const [ri, ...groups] = t.groups[gi];
+      const st = states[t.regions[ri]];
+      if (!st) return 'unknown';
+      if (st.noSched) return 'on';
+      if (!st.day) return 'unknown';
+      let worst = 'on';
+      for (const g of groups) {
+        const v = stateAt(st.day.groups[g], st.minute);
+        if (v === 'off') return 'off';
+        if (v === 'maybe') worst = 'maybe';
+      }
+      return worst;
+    }
+
+    let wasOn = null;
+    function draw() {
+      frame = 0;
+      const on = active();
+      if (on !== wasOn) { wasOn = on; onModeChange(); }
+      root.classList.toggle('is-houses', on);
+      lgHouses.hidden = !on;
+      for (const x of [lgOn, ramp, lgOff, lgNo]) x.hidden = on;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const tr = transform();
+      const cw = Math.round(tr.w * dpr), ch = Math.round(tr.h * dpr);
+      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, cw, ch);
+      if (!on) { note.hidden = true; return; }
+      if (!hIndex) {
+        if (!failed) { note.textContent = T.loadingHouses; note.hidden = false; loadIndex(); }
+        return;
+      }
+      const keys = wanted();
+      const pending = ensure(keys);
+      note.textContent = T.loadingHouses;
+      note.hidden = !pending;
+      if (!colors.on) readColors();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const { s, ox, oy } = tr;
+      // Streets: thin lines, wider for main roads; hidden when zoomed out far.
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.strokeStyle = colors.road;
+      for (const cls of [3, 2, 1]) {
+        if (cls === 3 && s < 60) continue;
+        ctx.lineWidth = Math.max(0.5, Math.min(cls === 1 ? 6 : cls === 2 ? 4 : 2.5, s * (cls === 1 ? 0.012 : cls === 2 ? 0.009 : 0.006)));
+        ctx.beginPath();
+        for (const key of keys) {
+          const t = tiles.get(key);
+          if (!t || t instanceof Promise) continue;
+          for (const r of t.roadsAbs) {
+            if (r.cls !== cls) continue;
+            const p = r.pts;
+            ctx.moveTo(p[0] * s + ox, p[1] * s + oy);
+            for (let i = 2; i < p.length; i += 2) ctx.lineTo(p[i] * s + ox, p[i + 1] * s + oy);
+          }
+        }
+        ctx.stroke();
+      }
+      // Buildings: one square each, batched by colour (fast enough for a whole city on a phone).
+      const size = Math.max(1.6, Math.min(9, s * 0.009));
+      const half = size / 2;
+      const paths = { unknown: new Path2D(), on: new Path2D(), maybe: new Path2D(), off: new Path2D() };
+      const W = tr.w + size, H = tr.h + size;
+      for (const key of keys) {
+        const t = tiles.get(key);
+        if (!t || t instanceof Promise) continue;
+        const stateCache = new Map();
+        for (let i = 0; i < t.xs.length; i++) {
+          const x = t.xs[i] * s + ox, y = t.ys[i] * s + oy;
+          if (x < -size || y < -size || x > W || y > H) continue;
+          const gi = t.g[i];
+          let st = stateCache.get(gi);
+          if (st === undefined) { st = stateOf(t, gi); stateCache.set(gi, st); }
+          paths[st].rect(x - half, y - half, size, size);
+        }
+      }
+      for (const k of ['unknown', 'on', 'maybe', 'off']) { ctx.fillStyle = colors[k]; ctx.fill(paths[k]); }
+      if (picked) {
+        const x = picked.x * s + ox, y = picked.y * s + oy;
+        ctx.lineWidth = 2; ctx.strokeStyle = colors.on;
+        ctx.strokeRect(x - half - 3, y - half - 3, size + 6, size + 6);
+      }
+    }
+    function schedule() { if (!frame) frame = requestAnimationFrame(draw); }
+
+    let picked = null;
+    function hitTest(clientX, clientY) {
+      if (!hIndex) return null;
+      const r = svg.getBoundingClientRect();
+      const tr = transform();
+      const px = clientX - r.left, py = clientY - r.top;
+      let best = null, bestD = 14 * 14;
+      for (const key of wanted()) {
+        const t = tiles.get(key);
+        if (!t || t instanceof Promise) continue;
+        for (let i = 0; i < t.xs.length; i++) {
+          const dx = t.xs[i] * tr.s + tr.ox - px, dy = t.ys[i] * tr.s + tr.oy - py;
+          const d = dx * dx + dy * dy;
+          if (d < bestD) { bestD = d; best = { t, i }; }
+        }
+      }
+      if (!best) return null;
+      const { t, i } = best;
+      const gi = t.g[i];
+      const set = gi >= 0 ? t.groups[gi] : null;
+      return {
+        x: t.xs[i], y: t.ys[i],
+        city: t.cities[t.c[i]], street: t.streets[t.s[i]], number: t.n[i],
+        region: set ? t.regions[set[0]] : null, groups: set ? set.slice(1) : [],
+      };
+    }
+    function pick(hit) { picked = hit; schedule(); }
+
+    return { active, schedule, hitTest, pick, refresh() { readColors(); computeStates(); schedule(); }, attribution: () => hIndex && hIndex.attribution };
+  })();
 
   // ---- tooltip and details ----
   function statusLine(id) {
@@ -395,9 +641,87 @@ export function createPowerMap(opts) {
     try { return new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : lang, { timeZone: 'Europe/Kyiv', hour: '2-digit', minute: '2-digit' }).format(new Date(iso)); } catch { return ''; }
   }
 
+  const spans = (list) => list.map((i) => `${i.from}–${i.to}${i.type === 'maybe' ? '?' : ''}`).join(', ');
+
+  // What other sources say about these groups today and tomorrow, when they disagree.
+  function checksFor(file, groups) {
+    const out = [];
+    const checks = (file && file.checks) || [];
+    const same = checks.filter((c) => c.result === 'same').map((c) => c.name);
+    if (same.length) out.push(h('p', 'pm-src', fill(T.agree, { s: [...new Set(same)].join(', ') })));
+    const now = kyivNow();
+    for (const c of checks) {
+      if (c.result !== 'different' || !c.days || !c.days.length) continue;
+      const lines = [];
+      for (const d of c.days) {
+        if (d.date < now.date) continue;
+        for (const g of groups || Object.keys(d.groups)) {
+          if (!(g in d.groups)) continue;
+          const mine = ((file.days || []).find((x) => x.date === d.date) || { groups: {} }).groups[g];
+          const theirs = d.groups[g];
+          if (mine && spans(mine) === spans(theirs)) continue;
+          lines.push(`${d.date === now.date ? '' : T.tomorrow + ' · '}${g}: ${theirs.length ? spans(theirs) : T.noOutages.toLowerCase()}`);
+        }
+      }
+      if (!lines.length) continue;
+      const box = h('div', 'pm-alt');
+      const a = h('a', null, c.name);
+      a.href = c.url; a.target = '_blank'; a.rel = 'noopener';
+      const head = h('p');
+      const label = c.updatedAt ? fill(T.differs, { s: '\u0000', t: kyivClock(c.updatedAt) }) : fill(T.differsNoTime, { s: '\u0000' });
+      const [before, after] = label.split('\u0000');
+      head.append(before, a, after);
+      const ul = h('ul');
+      for (const l of lines.slice(0, 12)) ul.append(h('li', null, l));
+      box.append(head, ul);
+      out.push(box);
+    }
+    return out;
+  }
+
+  function renderHouse() {
+    const head = h('div', 'pm-head');
+    const addr = [house.street, house.number].filter(Boolean).join(', ');
+    head.append(h('h3', null, addr || T.houseTitle));
+    const x = h('button', 'pm-x');
+    x.type = 'button';
+    x.setAttribute('aria-label', T.close);
+    x.textContent = '×';
+    x.addEventListener('click', () => { house = null; houses.pick(null); renderPanel(); });
+    head.append(x);
+    panel.append(head);
+    const where = [house.city, house.region && nameOf(house.region)].filter(Boolean).join(' · ');
+    if (where) panel.append(h('p', 'pm-sum', where));
+    if (!house.groups.length) { panel.append(h('p', 'pm-sum', T.houseNoGroup)); return; }
+    const file = files[house.region];
+    const g = house.groups.join(', ');
+    panel.append(h('p', 'pm-hg', fill(house.groups.length > 1 ? T.houseGroups : T.houseGroup, { g })));
+    const now = kyivNow();
+    const day = file && (file.days || []).find((d) => d.date === now.date);
+    if (file && file.status === 'no_schedules') { panel.append(h('p', 'pm-now', T.noOutages)); }
+    else if (!day) { panel.append(h('p', 'pm-sum', T.noToday)); }
+    else {
+      for (const grp of house.groups) {
+        const st = groupState(day.groups[grp], now.minute);
+        const line = h('p', 'pm-now');
+        line.dataset.state = st.state;
+        line.textContent = (house.groups.length > 1 ? grp + ': ' : '') + (st.state === 'on' ? T.nowOn : st.state === 'off' ? T.nowOff : T.nowMaybe)
+          + (st.next != null ? ' · ' + fill(T.until, { t: hm(st.next) }) : '');
+        panel.append(line);
+        const off = day.groups[grp] || [];
+        panel.append(h('p', 'pm-sum', off.length ? fill(T.todayOff, { t: spans(off) }) : T.todayNone));
+      }
+    }
+    if (file && file.status === 'stale') panel.append(h('p', 'pm-warn', T.stale));
+    if (file && file.emergency && file.emergency.active) panel.append(h('p', 'pm-warn', T.emergency));
+    panel.append(...checksFor(file, house.groups));
+    if (file && file.updatedAt) panel.append(h('p', 'pm-upd', fill(T.updated, { t: kyivClock(file.updatedAt) })));
+  }
+
   function renderPanel() {
     panel.replaceChildren();
-    if (!selected) { panel.append(h('p', 'pm-pick', T.pick)); return; }
+    if (house) { renderHouse(); return; }
+    if (!selected) { panel.append(h('p', 'pm-pick', housesBase && !houses.active() ? T.pick + ' ' + T.zoomHouses : T.pick)); return; }
     const head = h('div', 'pm-head');
     head.append(h('h3', null, nameOf(selected)));
     const x = h('button', 'pm-x');
@@ -420,15 +744,48 @@ export function createPowerMap(opts) {
       ul.append(li);
     }
     panel.append(ul);
+    panel.append(...checksFor(files[selected], null));
     if (s.updatedAt) panel.append(h('p', 'pm-upd', fill(T.updated, { t: kyivClock(s.updatedAt) })));
+    // Parts of the region served by another operator (CEK in Dnipropetrovsk), with their own groups.
+    for (const part of ((index && index.regions) || []).filter((e) => e.area === selected)) {
+      const ps = regionSummary(part, files[part.id], kyivNow());
+      panel.append(h('h4', 'pm-part', nameOf(part.id)));
+      if (ps.kind !== 'live') { panel.append(h('p', 'pm-sum', ps.kind === 'notoday' ? T.noToday : T.noData)); continue; }
+      const pl = h('ul', 'pm-groups');
+      for (const g of ps.groups) {
+        const li = h('li', 'pm-g');
+        li.dataset.state = g.state;
+        li.append(h('b', null, g.id), h('span', null, T[g.state] + (g.next != null ? ' · ' + fill(T.until, { t: hm(g.next) }) : '')));
+        pl.append(li);
+      }
+      panel.append(pl, ...checksFor(files[part.id], null));
+    }
+  }
+
+  let house = null;
+  function selectHouse(hit) {
+    house = hit;
+    houses.pick(hit);
+    renderPanel();
   }
 
   function select(id, focus) {
+    house = null;
+    houses.pick(null);
     selected = id;
     for (const [rid, p] of Object.entries(paths)) p.classList.toggle('is-selected', rid === id);
     renderPanel();
     if (id && focus) focusRegion(id);
     if (opts.onSelect) opts.onSelect(id);
+  }
+
+  function setFoot(now = kyivNow()) {
+    const attribution = housesBase && houses.active() ? ' · ' + T.osm : '';
+    foot.textContent = fill(T.asOf, { t: hm(now.minute) }) + ' · ' + T.hint + attribution;
+  }
+  function onModeChange() {
+    setFoot();
+    if (!selected && !house) renderPanel();
   }
 
   function paint() {
@@ -450,7 +807,8 @@ export function createPowerMap(opts) {
       if (lab) lab.classList.toggle('on-light', s.kind === 'live' && s.share >= 0.6);
       p.setAttribute('aria-label', nameOf(r.id) + '. ' + statusLine(r.id));
     }
-    foot.textContent = fill(T.asOf, { t: hm(now.minute) }) + ' · ' + T.hint;
+    setFoot(now);
+    houses.refresh();
     renderPanel();
   }
 

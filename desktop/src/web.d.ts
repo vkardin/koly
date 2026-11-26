@@ -16,6 +16,8 @@ declare module "@web/powermap.js" {
     lang: string;
     names?: Record<string, LocalizedName>;
     onSelect?: (id: string | null) => void;
+    /** Base URL of the house tiles; without it the map shows regions only. */
+    housesBase?: string;
   }): PowerMap;
   export function loadAll(base: string, fetchImpl?: typeof fetch): Promise<{ index: IndexFile; files: Record<string, RegionFile> }>;
 }

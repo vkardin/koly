@@ -239,4 +239,19 @@
     <string name="widget_preview_2h">2 h</string>
     <string name="widget_preview_total">Total: 8 h 30 min</string>
     <string name="widget_theme_hint">One theme for all widgets. “Same as system” follows the phone’s light and dark mode, and Minimal widgets take your wallpaper colors.</string>
+    <string name="update_title">Updates</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_up_to_date">You have the latest version</string>
+    <string name="update_available">Version %1$s is available</string>
+    <string name="update_install">Update</string>
+    <string name="update_downloading">Downloading version %1$s: %2$d%%</string>
+    <string name="update_permission">Android asks you to allow this app to install updates. Turn the permission on and tap Update again.</string>
+    <string name="update_permission_button">Open permission</string>
+    <string name="update_installing">Installing version %1$s…</string>
+    <string name="update_failed">Could not update: %1$s</string>
+    <string name="update_store">The store you installed the app from keeps it up to date.</string>
+    <string name="update_dialog_title">New version of Koly Ye</string>
+    <string name="update_dialog_text">Version %1$s (%2$s) is available. It downloads and installs right here; the system will ask you to confirm.</string>
+    <string name="update_later">Later</string>
 </resources>

@@ -76,8 +76,8 @@ def test_tiles_put_buildings_where_the_map_draws_them(tmp_path: Path):
     osm = tmp_path / "osm"
     osm.mkdir()
     with gzip.open(osm / "buildings.tsv.gz", "wt", encoding="utf-8") as f:
-        f.write("region\tlon\tlat\tcity\tstreet\told_street\tnumber\n")
-        f.write("lviv\t24.03\t49.84\tЛьвів\tНаукова\t\t1\n")
+        f.write("region\tlon\tlat\tcity\tcity_from\tstreet\told_street\tnumber\n")
+        f.write("lviv\t24.03\t49.84\tЛьвів\ttag\tНаукова\t\t1\n")
     with gzip.open(osm / "roads.tsv.gz", "wt", encoding="utf-8") as f:
         f.write("")
     cache = tmp_path / "cache"
@@ -93,3 +93,14 @@ def test_tiles_put_buildings_where_the_map_draws_them(tmp_path: Path):
     assert abs(tx * 8 + tile["x"][0] / 1024 - x) < 0.002 and abs(ty * 8 + tile["y"][0] / 1024 - y) < 0.002
     assert tile["regions"] == ["lviv"] and tile["groups"] == [[0, "1.2"]] and tile["g"] == [0]
     assert index["coverage"]["lviv"] == {"houses": 1, "withGroup": 1}
+
+
+def test_same_name_handles_kinds_initials_and_order():
+    from houses.crawl import same_name
+
+    assert same_name("вулиця Тараса Шевченка", "Шевченка Т. вул.")
+    assert same_name("вул. Героїв Майдану", "Героїв Майдану")
+    assert not same_name("вулиця Шевченка", "пров. Шевченка")
+    assert same_name("проспект Миру", "пр-т Миру")
+    assert same_name("вулиця Кам’янецька", "вул. Кам'янецька")
+    assert not same_name("вулиця Садова", "вулиця Садова Нова")

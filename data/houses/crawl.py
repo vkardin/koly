@@ -96,29 +96,78 @@ def save_cache(path: Path, cache: dict[str, dict]) -> None:
 
 # ---- matching directory entries ----
 
-def _norm(text: str) -> str:
+# Kinds of street and settlement, in their usual spellings. Two names match when their words match
+# once these are set aside, and their kinds agree whenever both names give one.
+_KINDS = {
+    "вулиця": "вул", "вул": "вул", "ул": "вул",
+    "провулок": "пров", "пров": "пров", "пер": "пров",
+    "проспект": "просп", "просп": "просп", "пр-т": "просп", "пр": "просп",
+    "бульвар": "бул", "бульв": "бул", "бул": "бул",
+    "площа": "пл", "пл": "пл", "майдан": "майдан",
+    "тупик": "туп", "туп": "туп", "узвіз": "узвіз", "шосе": "шосе", "набережна": "наб", "наб": "наб",
+    "проїзд": "проїзд", "алея": "алея", "в'їзд": "вїзд", "вїзд": "вїзд", "лінія": "лінія", "квартал": "кв", "кв": "кв",
+    "мікрорайон": "мкр", "мкр": "мкр", "масив": "масив", "урочище": "ур",
+    "місто": "", "м": "", "село": "", "с": "", "селище": "", "смт": "", "с-ще": "", "сщ": "", "хутір": "", "х": "",
+}
+_TOKEN = __import__("re").compile(r"[^\W_]+(?:['’ʼ-][^\W_]+)*")
+
+
+def _parts(text: str) -> tuple[str | None, list[str]]:
+    from ua_outages.providers._address import fold
+
+    kind = None
+    words: list[str] = []
+    for tok in _TOKEN.findall(fold(text).replace("’", "'").replace("ʼ", "'")):
+        if tok in _KINDS:
+            kind = kind or (_KINDS[tok] or None)
+        else:
+            words.append(tok.replace("'", ""))
+    return kind, words
+
+
+def same_name(a: str, b: str) -> bool:
+    """ "вулиця Тараса Шевченка" = "Шевченка Т. вул." ≠ "пров. Шевченка"."""
+    ka, wa = _parts(a)
+    kb, wb = _parts(b)
+    if ka and kb and ka != kb:
+        return False
+    if not wa or not wb:
+        return False
+    if sorted(wa) == sorted(wb):
+        return True
+    if len(wa) != len(wb):
+        return False
+    # Initials: "Т Шевченка" for "Тараса Шевченка".
+    full_a = sorted(w for w in wa if len(w) > 1)
+    full_b = sorted(w for w in wb if len(w) > 1)
+    ini_a = sorted(w[0] for w in wa if len(w) == 1)
+    ini_b = sorted(w[0] for w in wb if len(w) == 1)
+    if ini_a and not ini_b:
+        rest = list(full_b)
+        for w in full_a:
+            if w not in rest:
+                return False
+            rest.remove(w)
+        return sorted(w[0] for w in rest) == ini_a
+    if ini_b and not ini_a:
+        return same_name(b, a)
+    return False
+
+
+def _house(text: str) -> str:
     from ua_outages.providers._address import compact, strip_kind
 
-    return compact(strip_kind(text))
-
-
-def _words(text: str) -> tuple[str, ...]:
-    from ua_outages.providers._address import words
-
-    return tuple(sorted(words(text)))
+    return compact(strip_kind(text)).replace("корпус", "к").replace("корп", "к")
 
 
 def best(choices, query: str, house: bool = False):
     """The one choice that names `query`, or None when there is none or more than one."""
-    want = _norm(query)
-    exact = [c for c in choices if _norm(c.label) == want]
-    if len(exact) == 1:
-        return exact[0]
-    if exact or house:
-        return None  # a house number must match exactly; two equal names are ambiguous
-    # Same words in another order: "Шевченка Тараса" for "Тараса Шевченка".
-    same = [c for c in choices if _words(c.label) == _words(query)]
-    return same[0] if len(same) == 1 else None
+    if house:
+        want = _house(query)
+        exact = [c for c in choices if _house(c.label) == want]
+        return exact[0] if len(exact) == 1 else None
+    found = [c for c in choices if same_name(c.label, query)]
+    return found[0] if len(found) == 1 else None
 
 
 class Miss(Exception):
@@ -131,6 +180,7 @@ class Walker:
     http: object
     options_cache: dict = field(default_factory=dict)
     requests: int = 0
+    samples: dict = field(default_factory=dict)
 
     async def options(self, path: tuple[str, ...], query: str) -> list:
         key = (path, query)
@@ -159,6 +209,9 @@ class Walker:
         choices = await self.options(path, query)
         found = best(choices, query, house=step.house)
         if found is None:
+            if self.samples.get(role, 0) < 12:
+                self.samples[role] = self.samples.get(role, 0) + 1
+                log.info("no %s match for %r among %s", role, query, [c.label for c in choices[:6]])
             raise Miss(role)
         return found
 
