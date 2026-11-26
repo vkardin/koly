@@ -39,6 +39,22 @@ jobs:
               checks = ", ".join(f"{c['source']}: {c['result']}" + (f" ({', '.join(x['date'] for x in c['days'])})" if c['days'] else "") for c in d.get("checks", []))
               print(f"| {d['id']} | {d['status']} | {d['updatedAt'][5:16]} | {checks or '—'} |")
           PY
+      - name: Where sources disagree
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          for f in sorted(pathlib.Path("site/v1/regions").glob("*.json")):
+              d = json.loads(f.read_text())
+              main = {x["date"]: x for x in d["days"]}
+              for c in d.get("checks", []):
+                  for day in c["days"]:
+                      m = main.get(day["date"], {"groups": {}})
+                      for g, iv in day["groups"].items():
+                          a = " ".join(f"{i['from']}-{i['to']}{'?' if i['type'] == 'maybe' else ''}" for i in m["groups"].get(g, []))
+                          b = " ".join(f"{i['from']}-{i['to']}{'?' if i['type'] == 'maybe' else ''}" for i in iv)
+                          if a != b:
+                              print(f"{d['id']} {day['date']} {g} | main({d['updatedAt'][11:16]}): {a or '-'} | {c['source']}({(c.get('updatedAt') or '')[11:16]}): {b or '-'}")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: dry-run
