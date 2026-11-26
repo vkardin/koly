@@ -55,7 +55,8 @@ def library(operator_id: str, url: str) -> Source:
 
 
 def _intervals(day: DaySchedule, group: str) -> list[tuple[str, str, str]]:
-    return [(i.from_, i.to, i.type) for i in day.groups.get(group, [])]
+    # Some sources end the day at 23:59, others at 24:00: the same moment.
+    return [(i.from_, "24:00" if i.to == "23:59" else i.to, i.type) for i in day.groups.get(group, [])]
 
 
 def compare(main: RegionSchedule, other: RegionSchedule, today: str) -> tuple[str, list[DaySchedule]]:
@@ -175,6 +176,10 @@ class Checked:
             result, days = compare(main, schedule, today)
             if result == "none":
                 continue
+            if (result == "different" and schedule.updated_at and main.updated_at
+                    and datetime.fromisoformat(schedule.updated_at) < datetime.fromisoformat(main.updated_at)):
+                # The other source shows an earlier version of the schedule: worth noting, not showing.
+                result, days = "older", []
             checks.append(SourceCheck(**base, updatedAt=schedule.updated_at, result=result, days=days))
             if result == "different":
                 log.warning("%s: %s disagrees on %s", region_id, source.id, [d.date for d in days] or "schedules")

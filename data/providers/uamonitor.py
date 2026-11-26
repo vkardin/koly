@@ -51,6 +51,8 @@ def convert(schedules: dict, region_id: str, groups: tuple[str, ...], today: dat
             for outage in schedule.groups.get(group, ()):
                 start = outage.start.hour * 60 + outage.start.minute if outage.start.date() == day else 0
                 end = outage.end.hour * 60 + outage.end.minute if outage.end.date() == day else 1440
+                if end == 1439:
+                    end = 1440  # "till 23:59" is the end of the day
                 if outage.end.date() < day or outage.start.date() > day:
                     continue
                 spans.append((start, end, "maybe" if outage.possible else "off"))

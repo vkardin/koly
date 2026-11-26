@@ -92,7 +92,8 @@ class Emergency(_Model):
     since: str | None = None
 
 
-CheckResult = Literal["same", "different", "failed"]
+# "older": differs, but the other source has not caught up with the main one's latest update.
+CheckResult = Literal["same", "different", "older", "failed"]
 SourceKind = Literal["operator", "library", "mirror"]
 
 

@@ -97,3 +97,16 @@ def test_checked_keeps_not_published_when_nothing_has_data():
         pass
     else:
         raise AssertionError("expected NotPublished")
+
+
+def test_older_other_source_is_not_shown():
+    main = sched(day(T, **{"1_1": [("08:00", "12:00")]})).model_copy(update={"updated_at": f"{T}T13:00:00+02:00"})
+    old = sched(day(T, **{"1_1": [("06:00", "08:00")]})).model_copy(update={"updated_at": f"{T}T09:30:00+02:00"})
+    [out] = Checked(Fake(main), [Source("m", "mirror", "M", "https://m", lambda r: old)]).fetch()
+    assert [(c.result, c.days) for c in out.checks] == [("older", [])]
+
+
+def test_end_of_day_spellings_agree():
+    a = sched(day(T, **{"1_1": [("20:00", "24:00")]}))
+    b = sched(day(T, **{"1_1": [("20:00", "23:59")]}))
+    assert compare(a, b, T)[0] == "same"
