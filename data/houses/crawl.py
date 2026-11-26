@@ -131,6 +131,14 @@ def _parts(text: str) -> tuple[str | None, list[str]]:
     return kind, words
 
 
+def _bare(text: str) -> str:
+    """The name to search a directory by: no kind of street, no note, apostrophes kept."""
+    from ua_outages.providers._address import fold
+
+    words = [t for t in _TOKEN.findall(_PARENS.sub(" ", text)) if fold(t).replace("’", "'").replace("ʼ", "'") not in _KINDS]
+    return " ".join(words) or text
+
+
 def same_name(a: str, b: str) -> bool:
     """ "вулиця Тараса Шевченка" = "Шевченка Т. вул." ≠ "пров. Шевченка"."""
     ka, wa = _parts(a)
@@ -215,7 +223,9 @@ class Walker:
             raise Miss(role)
         # Even for a step that can list everything, search by the name: lists are cut at 40 entries,
         # a search puts the exact match first (and the library caches the whole list it filters).
-        choices = await self.options(path, query)
+        # Directories search by the name alone: "Інженерна вулиця" finds nothing, "Інженерна" does.
+        search = query if step.house else _bare(query)
+        choices = await self.options(path, search)
         found = best(choices, query, house=step.house)
         if found is None:
             if self.samples.get(role, 0) < 12:
