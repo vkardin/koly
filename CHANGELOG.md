@@ -1,5 +1,14 @@
 # Changelog
 
+## android 1.5.1 — 2026-11-26
+
+- The operator's notice, word for word, on the home card and the map (for example, that emergency outages replace the schedule in part of the region).
+- DTEK regions (Kyiv, Kyiv region, Dnipropetrovsk with CEK, Odesa): the weekly schedule of possible outages for your group, next to the schedule in force.
+
+## desktop 1.5.1 — 2026-11-26
+
+- Map: the operator's notice and the weekly schedule of possible outages in DTEK regions.
+
 ## android 1.5.0 — 2026-11-26
 
 - Map: "Where am I" button. Asks for your approximate location once and zooms to your street; without it, goes to the region of your main place.
