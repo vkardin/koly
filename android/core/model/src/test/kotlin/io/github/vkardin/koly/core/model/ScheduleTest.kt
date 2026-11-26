@@ -124,4 +124,19 @@ class ScheduleTest {
         assertTrue(r.emergency.active)
         assertEquals(IntervalType.OFF, r.days[0].groups["1.1"]!![0].type)
     }
+
+    @org.junit.Test
+    fun checksFromOtherSourcesAreRead() {
+        val json = """{"id":"lviv","status":"ok","days":[{"date":"2026-11-26","groups":{"1.1":[{"from":"08:00","to":"12:00","type":"off"}]}}],
+            "checks":[{"source":"m","kind":"mirror","name":"Mirror","url":"https://m","checkedAt":"2026-11-26T12:00:00+02:00","result":"same","days":[]},
+            {"source":"u","kind":"library","name":"Lib","url":"https://u","checkedAt":"2026-11-26T12:00:00+02:00","updatedAt":"2026-11-26T13:00:00+02:00","result":"different",
+             "days":[{"date":"2026-11-26","groups":{"1.1":[{"from":"09:00","to":"12:00","type":"off"}]}}]},
+            {"source":"x","name":"X","url":"https://x","checkedAt":"2026-11-26T12:00:00+02:00","result":"something-new"}]}"""
+        val r = KolyJson.decodeFromString(RegionFile.serializer(), json)
+        org.junit.Assert.assertEquals(listOf("Mirror"), r.agreeingSources())
+        val other = r.otherVersions("1.1", "2026-11-26")
+        org.junit.Assert.assertEquals(1, other.size)
+        org.junit.Assert.assertEquals("09:00", other[0].second[0].from)
+        org.junit.Assert.assertEquals(CheckResult.FAILED, r.checks[2].result)
+    }
 }

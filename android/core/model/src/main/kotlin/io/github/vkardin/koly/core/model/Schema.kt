@@ -80,6 +80,25 @@ data class Emergency(
 )
 
 @Serializable
+enum class CheckResult {
+    @SerialName("same") SAME,
+    @SerialName("different") DIFFERENT,
+    @SerialName("older") OLDER,
+    @SerialName("failed") FAILED,
+}
+
+/** The same region read from another source; [days] is set only when it shows other hours. */
+@Serializable
+data class SourceCheck(
+    val source: String = "",
+    val name: String = "",
+    val url: String = "",
+    val updatedAt: String? = null,
+    val result: CheckResult = CheckResult.FAILED,
+    val days: List<DaySchedule> = emptyList(),
+)
+
+@Serializable
 data class RegionFile(
     val id: String,
     val provider: String = "",
@@ -89,8 +108,21 @@ data class RegionFile(
     val status: RegionStatus = RegionStatus.ERROR,
     val emergency: Emergency = Emergency(),
     val days: List<DaySchedule> = emptyList(),
+    val checks: List<SourceCheck> = emptyList(),
 ) {
     fun isValidFor(expectedId: String): Boolean = id == expectedId
+
+    /** Names of other sources that show the same schedule. */
+    fun agreeingSources(): List<String> = checks.filter { it.result == CheckResult.SAME }.map { it.name }.distinct()
+
+    /** Other sources that show other hours for [group] on [date], with those hours. */
+    fun otherVersions(group: String, date: String): List<Pair<SourceCheck, List<Interval>>> {
+        val mine = day(date)?.groups?.get(group)
+        return checks.filter { it.result == CheckResult.DIFFERENT }.mapNotNull { c ->
+            val theirs = c.days.firstOrNull { it.date == date }?.groups?.get(group) ?: return@mapNotNull null
+            if (theirs == mine) null else c to theirs
+        }
+    }
 
     fun day(date: String): DaySchedule? = days.firstOrNull { it.date == date }
 }

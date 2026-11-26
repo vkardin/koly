@@ -114,6 +114,7 @@ private fun StatusCard(view: PlaceView, state: HomeState) {
                     Spacer(Modifier.height(6.dp))
                     Text(stringResource(R.string.region_stale), style = MaterialTheme.typography.bodySmall, color = c.maybeText)
                 }
+                OtherSources(view, state.now.date.toString())
             }
         }
     }
@@ -325,5 +326,36 @@ internal fun AllPlacesView(views: List<PlaceView>, state: HomeState) {
             Text(e.view.place.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(label, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
         }
+    }
+}
+
+/** What other sources say about this place's group today: agreement, or their other hours. */
+@Composable
+private fun OtherSources(view: PlaceView, date: String) {
+    val region = view.region ?: return
+    val c = LocalKolyColors.current
+    val other = region.otherVersions(view.place.group, date)
+    if (other.isEmpty()) {
+        val agree = region.agreeingSources()
+        if (agree.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            Text(stringResource(R.string.sources_agree, agree.joinToString(", ")), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+        }
+        return
+    }
+    for ((check, hours) in other) {
+        Spacer(Modifier.height(6.dp))
+        val list = if (hours.isEmpty()) stringResource(R.string.source_no_outages) else hours.joinToString(", ") {
+            it.from + "–" + it.to + if (it.type == io.github.vkardin.koly.core.model.IntervalType.MAYBE) "?" else ""
+        }
+        val time = check.updatedAt?.let {
+            runCatching {
+                java.time.OffsetDateTime.parse(it).atZoneSameInstant(java.time.ZoneId.of("Europe/Kyiv"))
+                    .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
+            }.getOrNull()
+        }
+        val text = if (time != null) stringResource(R.string.source_differs, check.name, time, list)
+        else stringResource(R.string.source_differs_no_time, check.name, list)
+        Text(text, style = MaterialTheme.typography.bodySmall, color = c.maybeText)
     }
 }

@@ -254,4 +254,8 @@
     <string name="update_dialog_title">New version of Koly Ye</string>
     <string name="update_dialog_text">Version %1$s (%2$s) is available. It downloads and installs right here; the system will ask you to confirm.</string>
     <string name="update_later">Later</string>
+    <string name="sources_agree">Matches: %1$s</string>
+    <string name="source_differs">%1$s shows other hours (updated at %2$s): %3$s</string>
+    <string name="source_differs_no_time">%1$s shows other hours: %2$s</string>
+    <string name="source_no_outages">no outages</string>
 </resources>

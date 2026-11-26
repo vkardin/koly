@@ -258,4 +258,8 @@
     <string name="update_dialog_title">Новая версия Коли Є</string>
     <string name="update_dialog_text">Доступна версия %1$s (%2$s). Обновление загрузится и установится здесь, система попросит подтвердить.</string>
     <string name="update_later">Позже</string>
+    <string name="sources_agree">Совпадает с: %1$s</string>
+    <string name="source_differs">%1$s показывает иначе (обновлено в %2$s): %3$s</string>
+    <string name="source_differs_no_time">%1$s показывает иначе: %2$s</string>
+    <string name="source_no_outages">без отключений</string>
 </resources>
