@@ -55,6 +55,8 @@ CRAWLERS: dict[str, Crawler] = {c.id: c for c in [
 ]}
 
 MIN_GAP = 1.0  # seconds between requests to one directory, whatever the library allows
+# Raised whenever matching improves: addresses missed by an older matcher are looked up again.
+MATCHER = 3
 
 
 @dataclass
@@ -293,7 +295,7 @@ async def crawl(crawler: Crawler, buildings: Path, cache_dir: Path, budget_s: fl
             if other is None or other.get("g") or other.get("m") not in ("city", "street"):
                 continue  # not looked up there yet, or found there
         entry = cache.get(addr.key)
-        if entry and entry["t"] >= stale_before:
+        if entry and entry["t"] >= stale_before and (entry.get("g") or entry.get("v") == MATCHER):
             continue
         todo.append(addr)
         sizes[addr.city] += 1
@@ -313,7 +315,7 @@ async def crawl(crawler: Crawler, buildings: Path, cache_dir: Path, budget_s: fl
             if time.monotonic() - started > budget_s:
                 break
             if (reason := dead_streets.get((addr.city, addr.street))) is not None:
-                cache[addr.key] = {"m": reason, "t": today.isoformat()}
+                cache[addr.key] = {"m": reason, "t": today.isoformat(), "v": MATCHER}
                 stats[reason] += 1
                 continue
             try:
@@ -321,18 +323,18 @@ async def crawl(crawler: Crawler, buildings: Path, cache_dir: Path, budget_s: fl
                 walker.requests += 1
                 res = await lookup.resolve(http, list(path))
                 groups = list(res.groups)
-                cache[addr.key] = {"g": groups, "t": today.isoformat()} if groups else {"m": "nogroup", "t": today.isoformat()}
+                cache[addr.key] = {"g": groups, "t": today.isoformat()} if groups else {"m": "nogroup", "t": today.isoformat(), "v": MATCHER}
                 stats["found" if groups else "nogroup"] += 1
                 errors_in_row = 0
             except Miss as miss:
                 reason = str(miss)
-                cache[addr.key] = {"m": reason, "t": today.isoformat()}
+                cache[addr.key] = {"m": reason, "t": today.isoformat(), "v": MATCHER}
                 stats[reason] += 1
                 if reason in ("street", "city"):
                     dead_streets[(addr.city, addr.street)] = reason
                 errors_in_row = 0
             except ValueError as error:  # the directory contradicts itself: not worth retrying soon
-                cache[addr.key] = {"m": "invalid", "t": today.isoformat()}
+                cache[addr.key] = {"m": "invalid", "t": today.isoformat(), "v": MATCHER}
                 stats["invalid"] += 1
                 log.debug("%s: %s", addr.key, error)
             except Exception as error:  # network trouble: leave it for the next run
