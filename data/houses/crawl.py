@@ -56,7 +56,7 @@ CRAWLERS: dict[str, Crawler] = {c.id: c for c in [
 
 MIN_GAP = 1.0  # seconds between requests to one directory, whatever the library allows
 # Raised whenever matching improves: addresses missed by an older matcher are looked up again.
-MATCHER = 3
+MATCHER = 4
 
 
 @dataclass
