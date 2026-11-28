@@ -127,3 +127,32 @@ body[data-family="koly"] summary:focus-visible,body[data-family="koly"] .retry:f
 .map-host{min-height:300px}
 .map-nojs{margin:0;padding:40px 0;color:var(--k-muted);text-align:center}
 #map .sub{max-width:72ch}
+
+/* Short / detailed view of the live card */
+.view-tabs{display:inline-flex;gap:2px;margin-top:22px;padding:3px;border:1px solid var(--k-line);border-radius:999px}
+.view-tabs button{font:inherit;font-size:13px;font-weight:650;padding:5px 14px;border:0;border-radius:999px;background:none;color:var(--k-muted);cursor:pointer}
+.view-tabs button[aria-pressed="true"]{background:var(--k-card2);color:var(--k-text)}
+.view-tabs button:focus-visible{outline:2px solid var(--k-amber);outline-offset:2px}
+.view-tabs + .days{margin-top:16px}
+.details{margin-top:16px;display:grid;gap:18px}
+.details[hidden],.days[hidden]{display:none}
+.det-day h3{margin:0 0 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--k-muted)}
+.det-sum{margin:0 0 8px;font-size:13px;color:var(--k-muted)}
+.det-none{margin:0;font-size:14px;color:var(--k-muted)}
+.det-rows,.det-chips{list-style:none;margin:0;padding:0}
+.det-rows{display:grid;gap:2px}
+.det-row{display:grid;grid-template-columns:12px 118px 1fr auto;gap:10px;align-items:center;padding:6px 10px;border-radius:10px;font-size:15px}
+.det-dot{width:10px;height:10px;border-radius:50%;background:var(--k-off);box-shadow:inset 0 0 0 1px var(--k-slate)}
+.det-row.maybe .det-dot{background:repeating-linear-gradient(135deg,#8a6a2b 0 3px,var(--k-off) 3px 6px)}
+.det-time{font-weight:650;font-variant-numeric:tabular-nums}
+.det-len,.det-tag{font-size:13px;color:var(--k-muted)}
+.det-row.past{opacity:.5}
+.det-row.now{background:var(--k-card2)}
+.det-row.now .det-tag,.det-row.next .det-tag{color:var(--k-amber);font-weight:650}
+.det-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{padding:3px 11px;border-radius:999px;background:var(--k-card2);color:var(--k-muted);font-size:12px}
+.chip b{color:var(--k-text);font-weight:650}
+.chip.same{box-shadow:inset 0 0 0 1px #6ec88c73}
+.chip.different{box-shadow:inset 0 0 0 1px var(--k-warn)}
+.chip.failed,.chip.older{opacity:.75}
+.note-info{margin:8px 0 0;padding:10px 12px;border-radius:12px;background:var(--k-card2);color:var(--k-muted);font-size:13px;white-space:pre-line}
