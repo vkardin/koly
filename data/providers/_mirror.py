@@ -18,6 +18,7 @@ from datetime import date, datetime, timedelta
 
 from common.http import NotPublished, ProviderError, get
 from common.models import DaySchedule, RegionSchedule
+from common.timeutil import iso_kyiv
 
 from . import _dtek_site
 
@@ -75,6 +76,10 @@ def parse(payload: object, region_id: str, today: date, now: datetime, mirror: M
     if mirror.max_age is not None and now - refreshed > mirror.max_age:
         raise ProviderError(f"mirror: last refreshed at {refreshed.isoformat()}")
     schedule = _dtek_site.parse_fact(payload.get("fact"), region_id)
+    if schedule.updated_at and datetime.fromisoformat(schedule.updated_at) > now + timedelta(minutes=5):
+        # A time in the future (Khmelnytskyi's file says 23:51 at noon) is not when it was updated:
+        # the mirror's own refresh time is the latest moment it can have been.
+        schedule = schedule.model_copy(update={"updated_at": iso_kyiv(refreshed)})
     days = [d for d in schedule.days if date.fromisoformat(d.date) >= today]
     if days:
         return schedule.model_copy(update={"days": days})

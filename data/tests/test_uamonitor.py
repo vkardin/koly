@@ -117,3 +117,12 @@ def test_convert_only_past_days_is_not_published():
     yesterday = TODAY - timedelta(days=1)
     with pytest.raises(NotPublished):
         convert({yesterday: LibraryDay(yesterday, groups={"1.1": ()})}, "volyn", GROUPS, TODAY)
+
+
+def test_mirror_update_time_in_the_future_is_replaced_by_the_refresh_time():
+    payload = load("mirror_kyiv_region.json")
+    refreshed = _mirror.refreshed_at(payload).astimezone(KYIV).replace(microsecond=0)
+    payload["fact"]["update"] = "16.11.2026 23:51"  # the file says 23:51 at half past four
+    now = refreshed + timedelta(minutes=10)
+    s = _mirror.parse(payload, "kyiv", TODAY, now, _mirror.oe_outage_data("Kyivoblenergo"), False)
+    assert datetime.fromisoformat(s.updated_at) == refreshed

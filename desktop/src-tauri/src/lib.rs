@@ -121,6 +121,7 @@ fn build_menu<R: Runtime>(
             &CheckMenuItem::with_id(app, "view-strip", label(labels, "viewStrip", "Смужка"), true, view == "strip", None::<&str>)?,
             &CheckMenuItem::with_id(app, "view-card", label(labels, "viewCard", "Картка"), true, view == "card", None::<&str>)?,
             &CheckMenuItem::with_id(app, "view-ring", label(labels, "viewRing", "Кільце"), true, view == "ring", None::<&str>)?,
+            &CheckMenuItem::with_id(app, "view-details", label(labels, "viewDetails", "Докладно"), true, view == "details", None::<&str>)?,
         ],
     )?;
     let map = MenuItem::with_id(app, "map", label(labels, "map", "Карта світла"), true, None::<&str>)?;

@@ -83,6 +83,17 @@ def test_khmelnytskyi():
     valid(s)
 
 
+def test_khmelnytskyi_additional_hours_are_added_not_merged():
+    # Issue #34: the "Додаткові години" of intraday updates come on top of the base schedule.
+    s = khmelnytskoblenergo.parse(text("khmelnytskoblenergo_updates.html"), date(2026, 11, 24))
+    assert [d.date for d in s.days] == ["2026-11-24"]
+    groups = {g: [(i.from_, i.to) for i in iv] for g, iv in s.days[0].groups.items()}
+    assert groups["4.2"] == [("07:00", "12:00"), ("16:00", "20:00"), ("22:00", "24:00")]
+    assert groups["2.1"] == [("12:00", "17:00"), ("20:00", "22:00")]
+    assert groups["5.2"] == [("01:00", "04:00"), ("08:00", "13:00"), ("17:00", "22:00")]
+    assert groups["1.1"] == [("00:00", "04:00"), ("09:00", "13:00")]
+
+
 def test_khmelnytskyi_old_schedule_is_not_published():
     with pytest.raises(NotPublished):
         khmelnytskoblenergo.parse(text("khmelnytskoblenergo.html"), TODAY + timedelta(days=1))

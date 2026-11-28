@@ -67,7 +67,7 @@ internal fun CardAndBarView(
 }
 
 @Composable
-private fun StatusCard(view: PlaceView, state: HomeState) {
+internal fun StatusCard(view: PlaceView, state: HomeState) {
     val c = LocalKolyColors.current
     val ctx = LocalContext.current
     KolyCard {

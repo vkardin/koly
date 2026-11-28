@@ -86,10 +86,11 @@ fun homeViewName(view: HomeView): String = stringResource(
         HomeView.CARD -> R.string.view_a
         HomeView.RING -> R.string.view_b
         HomeView.LIST -> R.string.view_c
+        HomeView.DETAILS -> R.string.view_d
     },
 )
 
-/** Three cards with mini icons; A is marked as recommended. */
+/** Cards with mini icons; A is marked as recommended. */
 @Composable
 fun HomeViewPicker(selected: HomeView, onSelect: (HomeView) -> Unit, modifier: Modifier = Modifier) {
     val c = LocalKolyColors.current
@@ -112,6 +113,14 @@ fun HomeViewPicker(selected: HomeView, onSelect: (HomeView) -> Unit, modifier: M
                         Spacer(Modifier.height(4.dp))
                         Tag(stringResource(R.string.recommended), color = MaterialTheme.colorScheme.primaryContainer)
                     }
+                }
+            }
+            HomeView.DETAILS -> {
+                for (i in 0 until 4) {
+                    val y = i * size.height / 4f
+                    drawRoundRect(c.track, Offset(0f, y), Size(w, size.height / 5f), r)
+                    drawRoundRect(if (i == 1) c.maybeText else c.off, Offset(4.dp.toPx(), y + 4.dp.toPx()), Size(w * 0.3f, 3.dp.toPx()), r)
+                    drawRoundRect(c.text.copy(alpha = 0.5f), Offset(4.dp.toPx() + w * 0.38f, y + 4.dp.toPx()), Size(w * 0.35f, 3.dp.toPx()), r)
                 }
             }
         }
@@ -151,6 +160,14 @@ private fun MiniIcon(view: HomeView) {
                     drawCircle(if (i == 1) c.off else c.on, 2.5.dp.toPx(), Offset(6.dp.toPx(), y + 6.dp.toPx()))
                     drawRoundRect(c.on, Offset(4.dp.toPx(), y + 11.dp.toPx()), Size(w * 0.55f, 3.dp.toPx()), r)
                     drawRoundRect(c.off, Offset(4.dp.toPx() + w * 0.55f, y + 11.dp.toPx()), Size(w * 0.3f, 3.dp.toPx()), r)
+                }
+            }
+            HomeView.DETAILS -> {
+                for (i in 0 until 4) {
+                    val y = i * size.height / 4f
+                    drawRoundRect(c.track, Offset(0f, y), Size(w, size.height / 5f), r)
+                    drawRoundRect(if (i == 1) c.maybeText else c.off, Offset(4.dp.toPx(), y + 4.dp.toPx()), Size(w * 0.3f, 3.dp.toPx()), r)
+                    drawRoundRect(c.text.copy(alpha = 0.5f), Offset(4.dp.toPx() + w * 0.38f, y + 4.dp.toPx()), Size(w * 0.35f, 3.dp.toPx()), r)
                 }
             }
         }

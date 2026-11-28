@@ -17,8 +17,8 @@ from common.intervals import Span, build_intervals
 from common.models import DaySchedule, Emergency, RegionSchedule
 from common.timeutil import iso_kyiv, now_kyiv, today_kyiv
 
-from . import _mirror
-from ._checks import Checked, mirror
+from . import _mirror, _svitlobot
+from ._checks import Checked, mirror, svitlobot
 from ._extras import DtekExtras, cek_groups
 
 
@@ -151,12 +151,14 @@ class UaMonitor:
 def _checked(provider_id: str, region_id: str, url: str, operator_id: str, oe_name: str | None = None, extras=None):
     """A library region; its open mirror (if any) is both the check and the fallback."""
     checks = [mirror(_mirror.oe_outage_data(oe_name), "oe-outage-data")] if oe_name else []
+    if region_id in _svitlobot.FOLDERS:
+        checks.append(svitlobot())
     return Checked(UaMonitor(provider_id, region_id, url, operator_id), checks, extras)
 
 
 REGIONS: list = [
     Checked(UaMonitor("dtek-krem", "kyiv", "https://www.dtek-krem.com.ua/ua/shutdowns",
-                      mirror=_mirror.outage_data_ua("kyiv-region")), [], DtekExtras("kyiv-region")),
+                      mirror=_mirror.outage_data_ua("kyiv-region")), [svitlobot()], DtekExtras("kyiv-region")),
     _checked("cek", "dnipropetrovsk-cek", "https://cek.dp.ua", "cek", extras=DtekExtras("dnipro", cek_groups)),
     _checked("volynoblenergo", "volyn",
              "https://energy.volyn.ua/spozhyvacham/perervy-u-elektropostachanni/hrafik-vidkliuchen/", "volyn-oe"),
@@ -169,12 +171,12 @@ REGIONS: list = [
     _checked("poltavaoblenergo", "poltava", "https://www.poe.pl.ua/disconnection/power-outages/", "poltava-oe",
              "Poltavaoblenergo"),
     _checked("sumyoblenergo", "sumy", "https://www.soe.com.ua/consumers/shutdowns", "sumy-oe"),
-    UaMonitor("ternopiloblenergo", "ternopil", "https://poweron.toe.com.ua",
-              mirror=_mirror.oe_outage_data("Ternopiloblenerho")),
+    Checked(UaMonitor("ternopiloblenergo", "ternopil", "https://poweron.toe.com.ua",
+                      mirror=_mirror.oe_outage_data("Ternopiloblenerho")), [svitlobot()]),
     _checked("kharkivoblenergo", "kharkiv", "https://oblenergo.kharkiv.ua/uk/media_centre/news", "kharkiv-oe",
              "Kharkivoblenerho"),
-    UaMonitor("chernihivoblenergo", "chernihiv", "https://chernihivoblenergo.com.ua/blackouts",
-              mirror=_mirror.oe_outage_data("Chernihivoblenergo")),
+    Checked(UaMonitor("chernihivoblenergo", "chernihiv", "https://chernihivoblenergo.com.ua/blackouts",
+                      mirror=_mirror.oe_outage_data("Chernihivoblenergo")), [svitlobot()]),
 ]
 
 

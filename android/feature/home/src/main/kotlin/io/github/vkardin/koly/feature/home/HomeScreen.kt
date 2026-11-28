@@ -119,6 +119,7 @@ fun HomeScreen(
                         HomeView.CARD -> CardAndBarView(views, selected, state, onSelect = viewModel::select, onAddPlace = onAddPlace)
                         HomeView.RING -> DayRingView(views, selected, state, onSelect = viewModel::select)
                         HomeView.LIST -> AllPlacesView(views, state)
+                        HomeView.DETAILS -> DetailsView(views, selected, state, onSelect = viewModel::select, onAddPlace = onAddPlace)
                     }
                 }
             }

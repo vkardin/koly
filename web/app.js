@@ -37,6 +37,34 @@
     try { return new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : lang, {timeZone: 'Europe/Kyiv', hour: '2-digit', minute: '2-digit'}).format(new Date(iso)); } catch { return ''; }
   }
 
+  // The "Detailed" view of the card: each outage with its length, the day's totals, where the data comes from.
+  const viewKey = 'koly-web-view';
+  let mode = 'short';
+  try { mode = localStorage.getItem(viewKey) === 'full' ? 'full' : 'short'; } catch {}
+
+  // Pure: the rows and totals of one day's intervals ({from, to, type} in minutes); `now` is null for a day not begun.
+  function dayModel(list, now) {
+    const rows = [];
+    let marked = false;
+    for (const i of list) {
+      let when = 'later';
+      if (now != null) {
+        if (i.to <= now) when = 'past';
+        else if (i.from <= now) when = 'now';
+        else if (!marked) { when = 'next'; marked = true; }
+      }
+      rows.push({from: i.from, to: i.to, type: i.type, when});
+    }
+    let off = 0, longest = null, edge = 0;
+    for (const i of list) {
+      off += i.to - i.from;
+      if (i.from - edge > 0 && (!longest || i.from - edge > longest.to - longest.from)) longest = {from: edge, to: i.from};
+      edge = Math.max(edge, i.to);
+    }
+    if (list.length && 1440 - edge > 0 && (!longest || 1440 - edge > longest.to - longest.from)) longest = {from: edge, to: 1440};
+    return {rows, off, on: 1440 - off, longest: list.length ? longest : null};
+  }
+
   function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
   function setState(kind, title, line) {
@@ -90,13 +118,69 @@
     const ticks = el('div', 'ticks'); ticks.setAttribute('aria-hidden', 'true');
     ['00', '06', '12', '18', '24'].forEach(t => ticks.append(el('span', '', t)));
     daysBox.append(ticks);
+    renderDetails(region, a, b, now);
     notes.replaceChildren();
+    if (region.notice) notes.append(el('p', 'note-info', region.notice));
     if (region.emergency?.active) notes.append(el('p', 'note-warn', T.w_emergency));
     if (region.status === 'stale') notes.append(el('p', 'note-warn', T.w_stale));
     if (region.status === 'no_schedules') notes.append(el('p', 'note-warn', T.w_noschedules));
     foot.replaceChildren();
     if (region.updatedAt) foot.append(fill(T.w_updated, {at: kyivTime(region.updatedAt)}) + ' ');
     if (region.sourceUrl && /^https:\/\//.test(region.sourceUrl)) { const s = el('a', '', T.w_source); s.href = region.sourceUrl; s.rel = 'noopener'; foot.append(s); }
+  }
+
+  const tabs = el('div', 'view-tabs'); tabs.setAttribute('role', 'group');
+  const det = el('div', 'details');
+  const tabButtons = [['short', T.w_view_short], ['full', T.w_view_full]].map(([m, label]) => {
+    const b = el('button', '', label); b.type = 'button'; b.dataset.mode = m;
+    b.addEventListener('click', () => { mode = m; try { localStorage.setItem(viewKey, m); } catch {} render(); });
+    tabs.append(b); return b;
+  });
+  daysBox.before(tabs); daysBox.after(det);
+
+  function renderDetails(region, a, b, now) {
+    tabButtons.forEach(x => x.setAttribute('aria-pressed', String(x.dataset.mode === mode)));
+    const full = mode === 'full';
+    det.hidden = !full; daysBox.hidden = full;
+    if (!full) return;
+    det.replaceChildren();
+    const when = {now: T.d_now, next: T.d_next, past: T.d_past, later: ''};
+    const span = (i) => hm(i.from) + '–' + (i.to === 1440 ? '24:00' : hm(i.to));
+    [[T.w_today, a, now.minute], [T.w_tomorrow, b, null]].forEach(([label, list, at]) => {
+      const sec = el('section', 'det-day');
+      sec.append(el('h3', '', label));
+      if (!list) { sec.append(el('p', 'det-none', T.w_day_none)); det.append(sec); return; }
+      const m = dayModel(list, at);
+      const parts = [fill(T.d_summary, {off: duration(m.off) || '0 ' + T.m, on: duration(m.on) || '0 ' + T.m})];
+      if (m.longest && m.rows.length) parts.push(fill(T.d_longest, {len: duration(m.longest.to - m.longest.from)}));
+      sec.append(el('p', 'det-sum', parts.join(' · ')));
+      if (!m.rows.length) sec.append(el('p', 'det-none', T.d_none));
+      else {
+        const ul = el('ul', 'det-rows');
+        m.rows.forEach(r => {
+          const li = el('li', 'det-row ' + r.type + ' ' + r.when);
+          li.append(el('span', 'det-dot'), el('span', 'det-time', span(r)), el('span', 'det-len', duration(r.to - r.from)),
+            el('span', 'det-tag', r.when === 'now' ? T.d_now : r.type === 'maybe' && r.when === 'later' ? T.d_maybe : when[r.when]));
+          ul.append(li);
+        });
+        sec.append(ul);
+      }
+      det.append(sec);
+    });
+    const src = el('section', 'det-day');
+    src.append(el('h3', '', T.d_sources));
+    let host = '';
+    try { host = new URL(region.sourceUrl).hostname.replace(/^www\./, ''); } catch {}
+    src.append(el('p', 'det-sum', fill(T.d_main, {host: host || '—', at: region.updatedAt ? kyivTime(region.updatedAt) : '—'})));
+    const checks = region.checks || [];
+    src.append(el('p', 'det-sum', checks.length ? fill(T.d_checks, {n: checks.filter(c => c.result === 'same').length, total: checks.length}) : T.d_nochecks));
+    if (checks.length) {
+      const ul = el('ul', 'det-chips');
+      const names = {same: T.d_same, different: T.d_different, older: T.d_older, failed: T.d_failed};
+      checks.forEach(c => { const li = el('li', 'chip ' + c.result); li.append(el('b', '', c.name), ' ' + (names[c.result] || c.result)); ul.append(li); });
+      src.append(ul);
+    }
+    det.append(src);
   }
 
   async function loadRegion(id) {

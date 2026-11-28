@@ -131,6 +131,8 @@ function viewIcon(view: string): string {
     return `<svg viewBox="0 0 80 48"><rect x="4" y="16" width="72" height="16" rx="8" class="vi-card"/><circle cx="14" cy="24" r="3" class="vi-on"/><rect x="22" y="21" width="22" height="3" rx="1.5" class="vi-line"/><rect x="56" y="19" width="14" height="10" rx="2" class="vi-on"/></svg>`;
   if (view === "card")
     return `<svg viewBox="0 0 80 48"><rect x="12" y="4" width="56" height="40" rx="6" class="vi-card"/><rect x="18" y="10" width="20" height="3" rx="1.5" class="vi-line"/><rect x="18" y="19" width="44" height="4" rx="2" class="vi-on"/><rect x="34" y="19" width="10" height="4" class="vi-off"/><rect x="18" y="31" width="44" height="4" rx="2" class="vi-on"/><rect x="46" y="31" width="12" height="4" class="vi-off"/></svg>`;
+  if (view === "details")
+    return `<svg viewBox="0 0 80 48"><rect x="14" y="2" width="52" height="44" rx="6" class="vi-card"/><rect x="20" y="8" width="18" height="3" rx="1.5" class="vi-line"/><rect x="20" y="16" width="40" height="4" rx="2" class="vi-on"/><rect x="34" y="16" width="9" height="4" class="vi-off"/><circle cx="23" cy="28" r="2" class="vi-off"/><rect x="29" y="27" width="22" height="2.5" rx="1.2" class="vi-line"/><circle cx="23" cy="35" r="2" class="vi-off"/><rect x="29" y="34" width="26" height="2.5" rx="1.2" class="vi-line"/></svg>`;
   return `<svg viewBox="0 0 80 48"><rect x="18" y="2" width="44" height="44" rx="8" class="vi-card"/><circle cx="40" cy="24" r="13" fill="none" stroke-width="5" class="vi-ring"/><path d="M40 11a13 13 0 0 1 12.4 9" fill="none" stroke-width="5" class="vi-ring-off"/></svg>`;
 }
 
@@ -139,6 +141,7 @@ function renderAppearance(): string {
     ["strip", "viewStrip"],
     ["card", "viewCard"],
     ["ring", "viewRing"],
+    ["details", "viewDetails"],
   ];
   return `<h1>${esc(t("secAppearance"))}</h1>
   <section class="group">

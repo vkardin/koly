@@ -112,3 +112,56 @@ test("countdown rounds up partial minutes and never goes negative", () => {
   assert.equal(formatCountdown(-5), "0:00");
   assert.equal(formatCountdown(125), "2:05");
 });
+
+import { dayDetails, sourceSummary } from "../src/core/details";
+
+test("detailed view: rows know what is over, going on and next, and the day adds up", () => {
+  const r = region([
+    {
+      date: "2026-11-28",
+      groups: {
+        "1.1": [
+          { from: "02:00", to: "06:00", type: "off" },
+          { from: "10:00", to: "13:30", type: "off" },
+          { from: "16:00", to: "17:00", type: "maybe" },
+          { from: "22:00", to: "24:00", type: "off" },
+        ],
+      },
+    },
+  ]);
+  const d = dayDetails(r, "1.1", "2026-11-28", 11 * 60)!;
+  assert.deepEqual(
+    d.rows.map((x) => [x.start, x.end, x.state, x.time]),
+    [
+      [120, 360, "off", "past"],
+      [600, 810, "off", "now"],
+      [960, 1020, "maybe", "next"],
+      [1320, 1440, "off", "later"],
+    ],
+  );
+  assert.equal(d.offMinutes, 240 + 210 + 120);
+  assert.equal(d.maybeMinutes, 60);
+  assert.equal(d.onMinutes, 1440 - 240 - 210 - 120 - 60);
+  // The longest stretch with power: 13:30–16:00 is 150 min, 17:00–22:00 is 300 min.
+  assert.deepEqual(d.longestOn, { start: 1020, end: 1320 });
+});
+
+test("detailed view: a day not published is null, tomorrow has nothing 'now' or 'past'", () => {
+  const r = region([{ date: "2026-11-29", groups: { "1.1": [{ from: "00:00", to: "04:00", type: "off" }] } }]);
+  assert.equal(dayDetails(r, "1.1", "2026-11-28", 600), null);
+  const d = dayDetails(r, "1.1", "2026-11-29", null)!;
+  assert.deepEqual(d.rows.map((x) => x.time), ["later"]);
+});
+
+test("detailed view: sources summary counts the matching ones", () => {
+  const r = { ...region([]), sourceUrl: "https://www.example.org/x", updatedAt: "2026-11-28T12:03:00+02:00" };
+  r.checks = [
+    { source: "a", kind: "mirror", name: "A", url: "", result: "same" },
+    { source: "b", kind: "mirror", name: "B", url: "", result: "different" },
+  ];
+  const s = sourceSummary(r)!;
+  assert.equal(s.host, "example.org");
+  assert.equal(s.updatedAt, "12:03");
+  assert.equal(s.agree, 1);
+  assert.equal(s.checks.length, 2);
+});
