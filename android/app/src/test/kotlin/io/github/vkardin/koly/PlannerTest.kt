@@ -9,7 +9,9 @@ import io.github.vkardin.koly.core.model.KYIV
 import io.github.vkardin.koly.core.model.KyivNow
 import io.github.vkardin.koly.core.model.NotifySettings
 import io.github.vkardin.koly.core.model.Place
+import io.github.vkardin.koly.core.model.IndexFile
 import io.github.vkardin.koly.core.model.RegionFile
+import io.github.vkardin.koly.core.model.RegionIndexEntry
 import io.github.vkardin.koly.core.model.RegionStatus
 import io.github.vkardin.koly.notify.NoticeKind
 import io.github.vkardin.koly.notify.isQuietTime
@@ -36,6 +38,20 @@ class PlannerTest {
             ),
         ),
     )
+
+    @Test
+    fun aGroupTheOperatorNoLongerHasIsNotShownAsPowerAllDay() {
+        val base = snapshot("2026-11-07" to listOf(Interval("03:00", "06:00", IntervalType.OFF)))
+        fun withGroups(vararg groups: String) = base.copy(
+            index = IndexFile(regions = listOf(RegionIndexEntry(id = "r", groups = groups.toList(), status = RegionStatus.OK))),
+        )
+        val gone = buildPlaceView(Place("p", "Дім", "r", "2.2"), withGroups("1.1", "4.1"), now("12:00"), "uk")
+        assertTrue(gone.groupGone)
+        assertFalse(gone.hasData)
+        val fine = buildPlaceView(place, withGroups("1.1", "4.1"), now("12:00"), "uk")
+        assertFalse(fine.groupGone)
+        assertTrue(fine.hasData)
+    }
 
     @Test
     fun plansWarningsBeforeOffAndOn() {

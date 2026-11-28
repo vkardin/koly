@@ -274,4 +274,7 @@
     <string name="d_older">устарело</string>
     <string name="d_failed">недоступен</string>
     <string name="d_hours_unit">%1$s ч</string>
+    <string name="group_gone">Очереди %1$s у оператора больше нет</string>
+    <string name="group_gone_hint">Оператор изменил нумерацию очередей. Откройте «Места» и выберите очередь заново: её видно на сайте оператора по вашему адресу.</string>
+    <string name="group_gone_short">Очереди больше нет</string>
 </resources>
