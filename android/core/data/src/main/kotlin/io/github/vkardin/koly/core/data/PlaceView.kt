@@ -20,9 +20,11 @@ data class PlaceView(
     val regionStatus: RegionStatus,
     /** The source was not reachable for a while, or the region is marked stale. */
     val stale: Boolean,
+    /** The operator no longer has this group (it renumbered its queues): the schedule would wrongly read "power all day". */
+    val groupGone: Boolean = false,
 ) {
     val noSchedules: Boolean get() = regionStatus == RegionStatus.NO_SCHEDULES
-    val hasData: Boolean get() = region != null && status.hasToday && !noSchedules
+    val hasData: Boolean get() = region != null && status.hasToday && !noSchedules && !groupGone
     val emergency: Boolean get() = region?.emergency?.active == true
 }
 
@@ -46,6 +48,7 @@ fun buildPlaceView(place: Place, snapshot: DataSnapshot, now: KyivNow, lang: Str
         status = placeStatus(region, place.group, now),
         regionStatus = status,
         stale = stale,
+        groupGone = entry != null && entry.groups.isNotEmpty() && place.group !in entry.groups,
     )
 }
 

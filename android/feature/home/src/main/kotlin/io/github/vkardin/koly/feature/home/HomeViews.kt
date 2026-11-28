@@ -78,6 +78,10 @@ internal fun StatusCard(view: PlaceView, state: HomeState) {
         )
         Spacer(Modifier.height(8.dp))
         when {
+            view.groupGone -> {
+                Text(stringResource(R.string.group_gone, view.place.group), style = MaterialTheme.typography.headlineSmall)
+                Text(stringResource(R.string.group_gone_hint), style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+            }
             view.noSchedules -> {
                 StatusLabel(PowerState.ON)
                 Spacer(Modifier.height(8.dp))
@@ -183,6 +187,7 @@ internal fun DayRingView(
             Text(
                 stringResource(
                     when {
+                        selected.groupGone -> R.string.group_gone_short
                         selected.noSchedules -> R.string.no_schedules
                         selected.region == null -> R.string.region_unavailable
                         else -> R.string.no_data_today
@@ -286,6 +291,7 @@ internal fun AllPlacesView(views: List<PlaceView>, state: HomeState) {
                 val countdown = countdownOf(v, state)
                 Text(
                     when {
+                        v.groupGone -> stringResource(R.string.group_gone_short)
                         v.noSchedules -> stringResource(R.string.no_schedules)
                         !v.hasData -> stringResource(R.string.status_region_off)
                         countdown != null -> KolyText.stillText(ctx, v.status.state, countdown.text)

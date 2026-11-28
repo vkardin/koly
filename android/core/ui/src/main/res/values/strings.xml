@@ -292,4 +292,7 @@
     <string name="d_older">застаріло</string>
     <string name="d_failed">недоступне</string>
     <string name="d_hours_unit">%1$s год</string>
+    <string name="group_gone">Черги %1$s у оператора більше немає</string>
+    <string name="group_gone_hint">Оператор змінив нумерацію черг. Відкрийте «Місця» і виберіть чергу заново: її видно на сайті оператора за вашою адресою.</string>
+    <string name="group_gone_short">Черги більше немає</string>
 </resources>

@@ -53,6 +53,9 @@ function placeIssue(place: Place): string | null {
   const region = data.regions[place.regionId];
   if (!region) return t("noData");
   if (region.status === "no_schedules") return t("noSchedules");
+  // The operator renumbered its queues: a group it no longer has would read as "power all day".
+  const groups = data.index?.regions.find((r) => r.id === place.regionId)?.groups;
+  if (groups && groups.length > 0 && !groups.includes(place.group)) return t("groupGone", { group: place.group });
   // Never present a missing day as "power on all day".
   if (!region.days.some((d) => d.date === kyivNow().date)) return t("noData");
   return null;

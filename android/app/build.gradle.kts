@@ -16,8 +16,8 @@ android {
         applicationId = "io.github.vkardin.koly"
         minSdk = 26
         targetSdk = 37
-        versionCode = 7
-        versionName = "1.7.0"
+        versionCode = 8
+        versionName = "1.7.1"
     }
 
     androidResources {

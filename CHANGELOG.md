@@ -1,5 +1,13 @@
 # Changelog
 
+## android 1.7.1 — 2026-11-28
+
+- When the operator renumbers its groups (DTEK in Dnipropetrovsk region and Kyiv switched to new queues on 26.11), a place whose group no longer exists says so instead of showing "power all day". Pick the group again in Places.
+
+## desktop 1.7.1 — 2026-11-28
+
+- Same for the widget: a group the operator no longer has is reported instead of "power all day".
+
 ## android 1.7.0 — 2026-11-28
 
 - New "Detailed" home layout: every outage of today and tomorrow with its length and whether it is over, going on or next; totals for the day; the longest stretch with power; the operator's notice; and where the schedule comes from and how the other sources compare. Pick it in Settings.

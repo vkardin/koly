@@ -270,4 +270,7 @@
     <string name="d_older">outdated</string>
     <string name="d_failed">unavailable</string>
     <string name="d_hours_unit">%1$s h</string>
+    <string name="group_gone">The operator no longer has group %1$s</string>
+    <string name="group_gone_hint">The operator renumbered its groups. Open Places and pick the group again: the site of your operator shows it for your address.</string>
+    <string name="group_gone_short">Group no longer exists</string>
 </resources>
