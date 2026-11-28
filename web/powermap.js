@@ -169,7 +169,7 @@ const STYLES = {
 };
 // Buildings: yellow with power, grey without, orange when an outage is possible, dark when unknown.
 const HOUSE_COLORS = {
-  dark: { on: '#ffc94d', maybe: '#ff8a3d', off: '#8c94a6', unknown: '#262c3b', nodata: '#323a52', line: '#0f1422', label: '#e6e9f2', halo: '#0f1422', edge: '#0b0f19' },
+  dark: { on: '#ffc94d', maybe: '#ff8a3d', off: '#8c94a6', unknown: '#4a5578', nodata: '#323a52', line: '#0f1422', label: '#e6e9f2', halo: '#0f1422', edge: '#0b0f19' },
   light: { on: '#f2ad1d', maybe: '#e0701a', off: '#9aa1ae', unknown: '#3b4150', nodata: '#c3c9d8', line: '#ffffff', label: '#141a2b', halo: '#ffffff', edge: '#5b6272' },
 };
 const SHAPES_FROM = 14; // zoom from which buildings are filled as their outlines
@@ -326,6 +326,10 @@ export function createPowerMap(opts) {
     const firstLabel = (map.getStyle().layers || []).find((l) => l.type === 'symbol');
     const before = firstLabel ? firstLabel.id : undefined;
     map.addImage('pm-hatch', hatch(), { pixelRatio: 1 });
+    // The basemap style names a few icons its sprite does not have; an empty one keeps the console quiet.
+    map.on('styleimagemissing', (e) => {
+      if (!map.hasImage(e.id)) map.addImage(e.id, { width: 1, height: 1, data: new Uint8Array(4) });
+    });
     map.addSource('regions', { type: 'geojson', data: regionsGeo.shapes, promoteId: 'id' });
     map.addLayer({
       id: 'regions-fill', type: 'fill', source: 'regions', filter: ['!', ['get', 'occupied']],

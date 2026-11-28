@@ -6,6 +6,7 @@ import { emit, listen } from "@tauri-apps/api/event";
 import { CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu } from "@tauri-apps/api/menu";
 import { LogicalSize, PhysicalPosition, availableMonitors, getCurrentWindow } from "@tauri-apps/api/window";
 import { ensureDemoRegions, loadCachedState, refresh, type DataState } from "./core/data";
+import { dayDetails, sourceSummary, type DayDetails } from "./core/details";
 import { agoText, durationText, setLang, t, trayLabels, type StringKey } from "./core/i18n";
 import { checkAfterRefresh, checkUpcoming } from "./core/notify";
 import { esc, logoMark, renderBar, renderRing } from "./core/render";
@@ -198,7 +199,92 @@ function renderRingView(): string {
   </div>`;
 }
 
-const renderers: Record<WidgetView, () => string> = { strip: renderStrip, card: renderCard, ring: renderRingView };
+/** "4 год", "1 год 30 хв", "45 хв": a length without a dangling "0 хв". */
+function lengthText(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  if (!h) return t("durationM", { m });
+  return m ? t("durationHm", { h, m }) : t("hours", { n: h });
+}
+
+function detailRows(day: DayDetails): string {
+  if (!day.rows.length) return `<div class="d-none muted">${esc(t("detNoOutages"))}</div>`;
+  const tag = (time: string, state: string) =>
+    time === "now" ? t("now") : time === "next" ? t("detNext") : time === "past" ? t("detPast") : state === "maybe" ? t("detMaybe") : "";
+  return `<ul class="d-rows">${day.rows
+    .map(
+      (r) => `<li class="d-row d-${r.time} d-${r.state}">
+        <span class="d-dot" aria-hidden="true"></span>
+        <span class="d-time">${formatHm(r.start)}–${r.end >= 1440 ? "24:00" : formatHm(r.end)}</span>
+        <span class="d-len">${esc(lengthText(r.end - r.start))}</span>
+        <span class="d-tag">${esc(tag(r.time, r.state))}</span>
+      </li>`,
+    )
+    .join("")}</ul>`;
+}
+
+function detailDay(label: string, day: DayDetails | null, now: number | null, segmentsOf: () => ReturnType<typeof placeStatus>["today"] | null): string {
+  if (!day) return `<section class="d-day"><h3>${esc(label)}</h3><div class="d-none muted">${esc(t("detNotPublished"))}</div></section>`;
+  const segs = segmentsOf();
+  const summary = [
+    t("detSummary", { off: lengthText(day.offMinutes + day.maybeMinutes), on: lengthText(day.onMinutes) }),
+    day.longestOn ? t("detLongestOn", { len: lengthText(day.longestOn.end - day.longestOn.start) }) : "",
+  ].filter(Boolean);
+  return `<section class="d-day">
+    <h3>${esc(label)}</h3>
+    ${segs ? renderBar(segs, { nowMinutes: now, labels: true, compact: now == null }) : ""}
+    <div class="d-summary muted small">${esc(summary.join(" · "))}</div>
+    ${detailRows(day)}
+  </section>`;
+}
+
+function detailSources(regionId: string): string {
+  const info = sourceSummary(data.regions[regionId]);
+  if (!info) return "";
+  const names: Record<string, StringKey> = { same: "detSame", different: "detDifferent", older: "detOlder", failed: "detFailed" };
+  const main = t("detMain", { host: info.host || "—", time: info.updatedAt ?? "—" });
+  const chips = info.checks.map((c) => `<li class="chip chip-${c.result}"><b>${esc(c.name)}</b> ${esc(t(names[c.result] ?? "detFailed"))}</li>`).join("");
+  const verdict = info.checks.length ? t("detChecks", { n: info.agree, total: info.checks.length }) : t("detNoChecks");
+  return `<section class="d-sources"><h3>${esc(t("detSources"))}</h3>
+    <div class="small">${esc(main)}</div>
+    <div class="small muted">${esc(verdict)}</div>
+    ${chips ? `<ul class="chips">${chips}</ul>` : ""}
+  </section>`;
+}
+
+function renderDetails(): string {
+  const place = mainPlace();
+  if (!place) return `<div class="widget details">${emptyState()}</div>`;
+  const now = kyivNow();
+  const issue = placeIssue(place);
+  const region = data.regions[place.regionId];
+  const ps = placeStatus(region, place.group, now);
+  const today = issue ? null : dayDetails(region, place.group, now.date, now.minutes);
+  const tomorrow = issue ? null : dayDetails(region, place.group, now.tomorrow, null);
+  const headline = issue ?? `${stateLabel(ps.state)}${ps.untilChange != null ? ` · ${stillText(ps)} ${formatCountdown(ps.untilChange)} ${changeAtText(ps)}` : ` · ${t("noChangesToday")}`}`;
+  const spoken = spokenStatus(place, ps, issue);
+  return `<div class="widget details">
+    <div class="card-head">
+      <div class="brand">${logoMark(20)}<span>Коли <em>Є</em></span></div>
+      <div class="head-right"><span class="muted small">${esc(agoText(data.checkedAt))}</span>${refreshButton()}${settingsButton()}</div>
+    </div>
+    ${emergencyBanner([place])}
+    ${data.demo ? `<div class="demo-note">${esc(t("demoLong"))}</div>` : ""}
+    <div class="d-head" role="group" aria-label="${esc(spoken)}" title="${esc(spoken)}">
+      <span class="dot state-${issue ? "none" : ps.state}" aria-hidden="true"></span>
+      <div><div class="place-label">${esc(place.label)} <span class="muted">· ${esc(place.group)}</span></div>
+      <div class="d-headline state-${issue ? "none" : ps.state}">${esc(headline)}</div></div>
+    </div>
+    ${region?.notice ? `<div class="d-notice">ℹ ${esc(region.notice)}</div>` : ""}
+    ${issue ? "" : detailDay(t("today"), today, now.minutes, () => ps.today)}
+    ${issue || !settings.showTomorrow ? "" : detailDay(t("tomorrow"), tomorrow, null, () => ps.tomorrow)}
+    ${issue ? "" : detailSources(place.regionId)}
+    ${updateVersion ? `<button class="update-link" data-action="update">${esc(t("updateAvailable", { v: updateVersion }))}</button>` : ""}
+    <div class="card-foot muted small">${statusFooter()} · ${esc(t("unofficial"))}</div>
+  </div>`;
+}
+
+const renderers: Record<WidgetView, () => string> = { strip: renderStrip, card: renderCard, ring: renderRingView, details: renderDetails };
 
 let lastSize = "";
 let lastHtml = "";
@@ -305,6 +391,7 @@ async function showContextMenu() {
     ["strip", "viewStrip"],
     ["card", "viewCard"],
     ["ring", "viewRing"],
+    ["details", "viewDetails"],
   ];
   const modes: Array<[WindowMode, StringKey]> = [
     ["top", "placementTop"],

@@ -321,3 +321,154 @@ body:not(.locked) .widget {
     transition: none !important;
   }
 }
+
+/* Detailed view: the schedule as a list, with totals and where it comes from */
+.details {
+  width: 23rem;
+  padding: 0.875rem 1rem 0.75rem;
+}
+
+.d-head {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.25rem 0 0.5rem;
+}
+
+.d-headline {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.d-notice {
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.5rem;
+  background: var(--card-2);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  white-space: pre-line;
+}
+
+.d-day,
+.d-sources {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.d-day h3,
+.d-sources h3 {
+  margin: 0 0 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.d-summary {
+  margin: 0.25rem 0 0.375rem;
+}
+
+.d-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.125rem;
+}
+
+.d-row {
+  display: grid;
+  grid-template-columns: 0.625rem 6.5rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.1875rem 0.375rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+}
+
+.d-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--off);
+  outline: 1px solid var(--line);
+}
+
+.d-maybe .d-dot {
+  background: var(--maybe-a);
+}
+
+.d-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.d-len,
+.d-tag {
+  color: var(--text-2);
+  font-size: 0.75rem;
+}
+
+.d-tag {
+  text-align: right;
+}
+
+.d-past {
+  opacity: 0.5;
+}
+
+.d-now {
+  background: var(--card-2);
+}
+
+.d-now .d-tag,
+.d-next .d-tag {
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.d-none {
+  font-size: 0.75rem;
+}
+
+.d-sources .small {
+  line-height: 1.5;
+}
+
+.chips {
+  list-style: none;
+  margin: 0.375rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.chip {
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background: var(--card-2);
+  color: var(--text-2);
+  font-size: 0.6875rem;
+}
+
+.chip b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.chip-same {
+  box-shadow: inset 0 0 0 1px rgba(110, 200, 140, 0.45);
+}
+
+.chip-different {
+  box-shadow: inset 0 0 0 1px var(--warn);
+}
+
+.chip-failed,
+.chip-older {
+  opacity: 0.75;
+}

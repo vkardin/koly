@@ -38,9 +38,22 @@ export interface RegionFile {
   status: RegionStatus;
   emergency: { active: boolean; note: string | null; since: string | null };
   days: DaySchedule[];
+  /** The operator's own notice, word for word. */
+  notice?: string | null;
+  /** The same region read from other sources (see data/providers/_checks.py). */
+  checks?: SourceCheck[];
 }
 
-export type WidgetView = "strip" | "card" | "ring";
+export interface SourceCheck {
+  source: string;
+  kind: "operator" | "library" | "mirror";
+  name: string;
+  url: string;
+  updatedAt?: string | null;
+  result: "same" | "different" | "older" | "failed";
+}
+
+export type WidgetView = "strip" | "card" | "ring" | "details";
 export type WindowMode = "top" | "desktop";
 export type Theme = "system" | "dark" | "light";
 

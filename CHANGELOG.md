@@ -1,5 +1,21 @@
 # Changelog
 
+## android 1.7.0 — 2026-11-28
+
+- New "Detailed" home layout: every outage of today and tomorrow with its length and whether it is over, going on or next; totals for the day; the longest stretch with power; the operator's notice; and where the schedule comes from and how the other sources compare. Pick it in Settings.
+
+## desktop 1.7.0 — 2026-11-28
+
+- New "Detailed" view of the widget (also in the tray menu and the right-click menu): outages with length and over/now/next, day totals, sources and how they compare.
+- Map: lighter colour for buildings whose group is not known yet.
+
+## Data and website — 2026-11-28
+
+- One more independent source for most regions (Svitlobot timetables), and Vinnytsia is back, read from it.
+- Khmelnytskyi: "additional hours" posts are added to the day's schedule instead of failing the region.
+- A mirror's update time that lies in the future is replaced by the time the mirror was last refreshed.
+- Website: "Detailed" view of the live card; map without console warnings.
+
 ## android 1.6.0 — 2026-11-26
 
 - New map: a real map with streets and place names under the regions and buildings, smooth pinch-zoom and dragging on the graphics chip (MapLibre with OpenFreeMap tiles). Light and dark to match the app.

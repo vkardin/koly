@@ -273,4 +273,23 @@
     <string name="source_no_outages">без відключень</string>
     <string name="possible_outages">За тижневим графіком можливі відключення: %1$s</string>
     <string name="operator_notice">Повідомлення оператора</string>
+    <string name="view_d">Докладно</string>
+    <string name="d_off_total">Без світла: %1$s</string>
+    <string name="d_maybe_total">Можливо: %1$s</string>
+    <string name="d_on_total">Зі світлом: %1$s</string>
+    <string name="d_longest_on">Найдовше зі світлом: %1$s–%2$s</string>
+    <string name="d_past">було</string>
+    <string name="d_now">зараз</string>
+    <string name="d_next">далі</string>
+    <string name="d_later">пізніше</string>
+    <string name="d_none">Відключень немає</string>
+    <string name="d_sources">Джерела</string>
+    <string name="d_main_source">Основне: %1$s</string>
+    <string name="d_main_source_time">Основне: %1$s, оновлено о %2$s</string>
+    <string name="d_agree">Збігається з %1$d з %2$d інших</string>
+    <string name="d_same">збігається</string>
+    <string name="d_different">інакше</string>
+    <string name="d_older">застаріло</string>
+    <string name="d_failed">недоступне</string>
+    <string name="d_hours_unit">%1$s год</string>
 </resources>

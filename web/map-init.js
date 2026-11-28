@@ -1,5 +1,5 @@
 // Mounts the power map on the site. Reads the same published files as the live status card.
-import { createPowerMap, loadAll } from '/koly/powermap.js?v=4';
+import { createPowerMap, loadAll } from '/koly/powermap.js?v=5';
 
 const host = document.querySelector('#power-map');
 if (host) {

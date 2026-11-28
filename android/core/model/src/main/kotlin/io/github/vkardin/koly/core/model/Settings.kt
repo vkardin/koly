@@ -12,8 +12,8 @@ data class Place(
     val group: String,
 )
 
-/** Layout of the home screen: A "card and bar", B "day ring", C "all places". */
-enum class HomeView { CARD, RING, LIST }
+/** Layout of the home screen: A "card and bar", B "day ring", C "all places", D "detailed". */
+enum class HomeView { CARD, RING, LIST, DETAILS }
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 

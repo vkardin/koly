@@ -34,7 +34,7 @@ Last checked: 2026-11-26.
 | Chernivtsi (`chernivtsi`) | Chernivtsioblenergo (`chernivtsioblenergo`) | https://oblenergo.cv.ua/shutdowns/ | HTML grid (half-hour cells) | done | Rows `inf1`…`inf12`, letters з (on) / в (off) / мз (maybe powered, published as `maybe`). Answers 403 to GitHub's servers (2026-11-16) and no mirror carries it: the region is published only when the site lets the run in. |
 | Kyiv region (`kyiv`) | DTEK KREM (`dtek-krem`) | https://www.dtek-krem.com.ua/ua/shutdowns | Mirror (JSON) | done | The site is behind a bot challenge, so the open mirror [outage-data-ua](https://github.com/Baskerville42/outage-data-ua) (MIT) is read; it must have refreshed within 3 hours. |
 | Donetsk (`donetsk`) | DTEK DEM | https://www.dtek-dem.com.ua/ua/shutdowns | — | none | No schedule published since 12.2024. |
-| Vinnytsia (`vinnytsia`) | Vinnytsiaoblenergo | https://disconnection.voe.com.ua/ | — | none | The only source is behind a Cloudflare challenge. Clients say the operator publishes no open schedule. |
+| Vinnytsia (`vinnytsia`) | Vinnytsiaoblenergo | https://disconnection.voe.com.ua/ | Mirror (JSON per group) | done | The operator's own site is behind a Cloudflare challenge, so the schedule is read from [Svitlobot timetables](https://github.com/Svitlobot-official/timetables) (CC BY 4.0), which carries it. No second source to check against. |
 | Ternopil (`ternopil`) | Ternopiloblenergo (`ternopiloblenergo`) | https://poweron.toe.com.ua | Mirror (JSON) | done | The operator gives hours only by address, so the mirror [OE_OUTAGE_DATA](https://github.com/yaroslav2901/OE_OUTAGE_DATA) is read. |
 | Kirovohrad (`kirovohrad`) | Kirovohradoblenergo (`kirovohradoblenergo`) | https://kiroe.com.ua/electricity-blackout | Text posts in the operator's official Telegram channels | done | library [ukraine-energy-monitor](https://github.com/fastiuk/ukraine-energy-monitor) (public preview `t.me/s/SvitloKropyvnytskyiMisto`). The site's own data is behind a bot challenge. |
 | Ivano-Frankivsk (`ivano-frankivsk`) | Prykarpattiaoblenergo (`prykarpattiaoblenergo`) | https://svitlo.oe.if.ua | API (JSON per queue) | done | library [ukraine-energy-monitor](https://github.com/fastiuk/ukraine-energy-monitor), then mirror [OE_OUTAGE_DATA](https://github.com/yaroslav2901/OE_OUTAGE_DATA). |
@@ -80,3 +80,7 @@ recovers. A failed workflow run opens a separate issue that closes after the nex
 Regions without an open address directory still show their buildings, as "group unknown".
 
 Map data © OpenStreetMap contributors, [ODbL](https://opendatacommons.org/licenses/odbl/); the published house tiles are under the same licence.
+
+## Extra checks: Svitlobot
+
+For most regions the [Svitlobot timetables](https://github.com/Svitlobot-official/timetables) (CC BY 4.0, one file per group and week) are one more independent source in `checks`. Only the hours are compared with the main source, not whether an interval is an outage or a possible outage, because Svitlobot does not make that distinction. A day it has not published (`outages: null`) counts as "not published", not as "no outages".

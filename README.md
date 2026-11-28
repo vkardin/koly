@@ -88,6 +88,8 @@ Koly Ye is free. If it helps you, you can support development on [Ko-fi](https:/
 
 [MIT](LICENSE) © vkardin
 
+Some schedules are cross-checked against open data: [Svitlobot timetables](https://github.com/Svitlobot-official/timetables) (CC BY 4.0), [outage-data-ua](https://github.com/Baskerville42/outage-data-ua) and [OE_OUTAGE_DATA](https://github.com/yaroslav2901/OE_OUTAGE_DATA).
+
 <!-- project-family:start -->
 
 [**vkardin / tools — all projects ↗**](https://vkardin.github.io/)

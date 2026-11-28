@@ -38,12 +38,22 @@ class Source:
     read: Callable[[str], RegionSchedule]
     # Sources that hit the operator's own site are read at most this often.
     min_interval: timedelta | None = None
+    # The source does not tell "no power" from "possibly no power": only the hours are compared.
+    hours_only: bool = False
 
 
 def mirror(m: _mirror.Mirror, source_id: str) -> Source:
     name = m.page.rstrip("/").rsplit("/", 1)[-1]
     return Source(source_id, "mirror", name, m.page,
                   lambda region_id: _mirror.fetch(m, region_id, today_kyiv(), now_kyiv()))
+
+
+def svitlobot() -> Source:
+    """Svitlobot's open timetables (CC BY 4.0): one more independent copy, the last to be trusted."""
+    from . import _svitlobot
+
+    return Source("svitlobot", "mirror", "Svitlobot", _svitlobot.PAGE, lambda region_id: _svitlobot.fetch(region_id),
+                  min_interval=timedelta(minutes=30), hours_only=True)
 
 
 def library(operator_id: str, url: str) -> Source:
@@ -54,12 +64,22 @@ def library(operator_id: str, url: str) -> Source:
                   min_interval=timedelta(minutes=30))
 
 
-def _intervals(day: DaySchedule, group: str) -> list[tuple[str, str, str]]:
+def _intervals(day: DaySchedule, group: str, hours_only: bool = False) -> list[tuple[str, str, str]]:
     # Some sources end the day at 23:59, others at 24:00: the same moment.
-    return [(i.from_, "24:00" if i.to == "23:59" else i.to, i.type) for i in day.groups.get(group, [])]
+    found = [(i.from_, "24:00" if i.to == "23:59" else i.to, i.type) for i in day.groups.get(group, [])]
+    if not hours_only:
+        return found
+    merged: list[tuple[str, str, str]] = []
+    for start, end, _ in found:  # sorted: touching hours are one outage whatever their kind
+        if merged and merged[-1][1] == start:
+            merged[-1] = (merged[-1][0], end, "off")
+        else:
+            merged.append((start, end, "off"))
+    return merged
 
 
-def compare(main: RegionSchedule, other: RegionSchedule, today: str) -> tuple[str, list[DaySchedule]]:
+def compare(main: RegionSchedule, other: RegionSchedule, today: str,
+            hours_only: bool = False) -> tuple[str, list[DaySchedule]]:
     """'same', 'different' or 'none' (nothing to compare) plus the other source's differing days (dates from today on).
 
     Only groups both sources know are compared: sources sometimes name or list groups
@@ -82,7 +102,7 @@ def compare(main: RegionSchedule, other: RegionSchedule, today: str) -> tuple[st
         if not shared:
             continue
         compared += 1
-        if any(_intervals(own, g) != _intervals(day, g) for g in shared):
+        if any(_intervals(own, g, hours_only) != _intervals(day, g, hours_only) for g in shared):
             differing.append(DaySchedule(date=day.date, groups={g: day.groups[g] for g in shared}))
     if differing:
         return "different", differing
@@ -175,7 +195,7 @@ class Checked:
                     continue  # nothing to compare yet: not a failure of the source
                 checks.append(SourceCheck(**base, result="failed"))
                 continue
-            result, days = compare(main, schedule, today)
+            result, days = compare(main, schedule, today, source.hours_only)
             if result == "none":
                 continue
             if (result == "different" and schedule.updated_at and main.updated_at
