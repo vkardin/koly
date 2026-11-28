@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing tag to build, e.g. desktop-v0.1.0"
+        description: "Release tag to build (created if missing), e.g. desktop-v1.7.0"
         required: true
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ github.ref }}
 
       - uses: actions/setup-node@v4
         with:
@@ -95,7 +95,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" --title "Коли Є для Windows $VERSION" --notes-file release/notes.md --latest
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "Коли Є для Windows $VERSION" --notes-file release/notes.md --latest
           gh release upload "$TAG" release/koly-widget-*-setup.exe release/koly-widget-*-setup.exe.sig release/latest.json --clobber
 
       - name: Update the auto-update feed

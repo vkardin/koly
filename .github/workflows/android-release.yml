@@ -3,6 +3,11 @@ name: android-release
 on:
   push:
     tags: ["android-v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to create and build, e.g. android-v1.7.0"
+        required: true
 
 permissions:
   contents: write
@@ -10,6 +15,8 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
     defaults:
       run:
         working-directory: android
@@ -22,7 +29,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Check the tag matches versionName
         run: |
-          version="${GITHUB_REF_NAME#android-v}"
+          version="${TAG#android-v}"
           grep -q "versionName = \"$version\"" app/build.gradle.kts || { echo "tag $version does not match versionName"; exit 1; }
           echo "VERSION=$version" >> "$GITHUB_ENV"
       - name: Restore the signing key
@@ -47,7 +54,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" ../dist/koly-$VERSION.apk ../dist/koly-$VERSION.aab \
+          gh release create "$TAG" --target "$GITHUB_SHA" ../dist/koly-$VERSION.apk ../dist/koly-$VERSION.aab \
             --title "Коли Є для Android $VERSION" \
             --notes "Android $VERSION. Details are in CHANGELOG.md."
       - name: Update the in-app update feed
@@ -57,7 +64,7 @@ jobs:
           code=$(sed -n 's/.*versionCode = \([0-9]*\).*/\1/p' app/build.gradle.kts)
           apk=../dist/koly-$VERSION.apk
           cat > ../dist/latest.json <<JSON
-          {"version":"$VERSION","versionCode":$code,"apk":"https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/koly-$VERSION.apk","sha256":"$(sha256sum "$apk" | cut -d' ' -f1)","size":$(stat -c%s "$apk"),"minSdk":26}
+          {"version":"$VERSION","versionCode":$code,"apk":"https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/koly-$VERSION.apk","sha256":"$(sha256sum "$apk" | cut -d' ' -f1)","size":$(stat -c%s "$apk"),"minSdk":26}
           JSON
           cat ../dist/latest.json
           gh release view android-latest >/dev/null 2>&1 || \
